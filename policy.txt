@@ -1,0 +1,10 @@
+#include <abstractions/base>
+@{HOME} = /home/user
+profile /usr/bin/foo flags=(complain) {
+  capability dac_override,
+  network inet tcp,
+  /bin/bash ix,
+  ^myhat {
+    /tmp/* r,
+  }
+}
