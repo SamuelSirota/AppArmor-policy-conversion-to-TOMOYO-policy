@@ -2,17 +2,18 @@
 %ignore WS
 %ignore COMMENT
 
-COMMENT: /#[^\n]*/ | /##[^\n]*/
+COMMENT: /#(?!(include)).*\r?\n/
 QUOTED_STRING: /"[^"]*"/
 MAGIC_PATH: /<[^" >][^>]*>/
 VARIABLE: /@\{[a-zA-Z][a-zA-Z0-9_]*\}/
 UNQUOTED_FILEGLOB: /\/[^ \t\n\r\f\v,]+/
 UNQUOTED_VALUE: /[^ \t\n\r\f\v,]+/
-CAPABILITY: /[a-z_]+/
+UNQUOTED_PROFILE_NAME: /[a-zA-Z0-9][^ \t\n\r\f\v]*/
+CAPABILITY: /[a-z][a-z_]+/
 PROFILE_FLAG: "complain" | "audit" | "enforce" | "mediate_deleted" | "attach_disconnected" | "chroot_relative"
 ACCESS_TOKEN: "r" | "w" | "a" | "l" | "k" | "m" | "ix" | "ux" | "Ux" | "px" | "Px" | "cx" | "Cx" | "pix" | "Pix" | "cix" | "Cix" | "pux" | "PUx" | "cux" | "CUx" | "x"
-NETWORK_DOMAIN: "unix" | "inet" | "inet6" | "packet"
-NETWORK_TYPE: "stream" | "dgram" | "raw" | "tcp" | "udp" | "icmp"
+NETWORK_DOMAIN: "unix" | "inet" | "ax25" | "ipx" | "appletalk" | "netrom" | "bridge" | "atmpvc" | "x25" | "inet6" | "rose" | "netbeui" | "security" | "key" | "netlink" | "packet" | "ash" | "econet" | "atmsvc" | "rds" | "sna" | "irda" | "pppox" | "wanpipe" | "llc" | "ib" | "mpls" | "can" | "tipc" | "bluetooth" | "iucv" | "rxrpc" | "isdn" | "phonet" | "ieee802154" | "caif" | "alg" | "nfc" | "vsock" | "kcm" | "qipcrtr" | "smc" | "xdp" ","
+NETWORK_TYPE: "stream" | "dgram" | "seqpacket" | "rdm" | "raw" | "packet" | "tcp" | "udp" | "icmp"
 
 start: (preamble_element | profile)*
 
@@ -24,18 +25,20 @@ value_list: (QUOTED_STRING | UNQUOTED_VALUE)+
 alias_rule: "alias" QUOTED_STRING "->" QUOTED_STRING ","
 
 INCLUDE_DIRECTIVE: "#include" | "include"
-include_rule: INCLUDE_DIRECTIVE ["if" "exists"] (QUOTED_STRING | MAGIC_PATH)
+include_rule: INCLUDE_DIRECTIVE ["if exists"] (QUOTED_STRING | MAGIC_PATH)
 
 abi_rule: "abi" (QUOTED_STRING | MAGIC_PATH) ","
 
 profile: ["profile"] profile_name [attachment] [flags] "{" rules "}"
 
-profile_name: QUOTED_STRING | UNQUOTED_FILEGLOB
+profile_name: QUOTED_STRING | UNQUOTED_FILEGLOB | UNQUOTED_PROFILE_NAME
 attachment: UNQUOTED_FILEGLOB
 flags: ["flags="] "(" flag_list ")"
 flag_list: PROFILE_FLAG ("," PROFILE_FLAG)*
 
-rules: (comma_rule "," | block_rule)*
+rules: (line_rule | comma_rule "," | block_rule)*
+
+line_rule: ( COMMENT | include_rule )
 
 comma_rule: capability_rule | network_rule | file_rule | link_rule
 
@@ -46,7 +49,7 @@ network_rule: qualifiers "network" [NETWORK_DOMAIN] [NETWORK_TYPE]
 
 file_rule: qualifiers ["owner"] file_rule_body
 file_rule_body: ("file" fileglob access | "file" access fileglob | fileglob access | access fileglob) ["->" exec_target]
-fileglob: QUOTED_STRING | UNQUOTED_FILEGLOB
+fileglob: ["/"] (UNQUOTED_FILEGLOB | VARIABLE) ("/" (UNQUOTED_FILEGLOB | VARIABLE))*
 access: ACCESS_TOKEN+
 exec_target: profile_name
 
@@ -54,7 +57,8 @@ link_rule: qualifiers ["owner"] "link" ["subset"] fileglob "->" fileglob
 
 block_rule: subprofile | hat
 subprofile: "profile" profile_name [attachment] [flags] "{" rules "}"
-hat: ("hat" | "^") hat_name [flags] "{" rules "}"
-hat_name: /[a-zA-Z][^ \t\n\r\f\v{}]*/
+
+HAT_NAME: /[a-zA-Z0-9][^ \t\n\r\f\v]*/
+hat: ("hat" | "^") HAT_NAME [flags] "{" rules "}"
 
 qualifiers: ["audit"] ["allow" | "deny"]

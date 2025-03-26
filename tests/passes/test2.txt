@@ -1,0 +1,9 @@
+#include <tunables/global>
+
+/usr/bin/example {
+  #include <abstractions/base>
+  
+  /etc/example.conf r,
+  /var/log/example.log w,
+  /usr/bin/example ix,
+}

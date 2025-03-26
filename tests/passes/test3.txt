@@ -1,0 +1,10 @@
+@{HOME}=/home/user/
+@{LOG_DIR}=/var/log/app/
+
+profile test_app {
+  capability net_bind_service,
+  capability chown,
+  
+  @{HOME}*.txt r,
+  @{LOG_DIR}app.log w,
+}

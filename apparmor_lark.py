@@ -8,7 +8,7 @@ parser = Lark(grammar, start="start", parser="lalr")
 
 # Example policy
 try:
-    with open("policy.txt", "r") as f:
+    with open("./tests/passes/test7.txt", "r") as f:
         policy = f.read()
     tree = parser.parse(policy)
     print(tree.pretty())

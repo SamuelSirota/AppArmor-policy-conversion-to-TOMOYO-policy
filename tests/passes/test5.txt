@@ -1,0 +1,11 @@
+profile /usr/bin/parent {
+  /tmp/parent.log w,
+  
+  profile child /usr/bin/child {
+    /tmp/child.log w,
+  }
+  
+  ^myhat flags=(enforce) {
+    /tmp/hat.log r,
+  }
+}

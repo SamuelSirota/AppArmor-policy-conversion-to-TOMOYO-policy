@@ -1,0 +1,7 @@
+abi "<abi/strict>",
+
+include if exists "/etc/apparmor.d/custom"
+
+profile /bin/test {
+  /test/file r,
+}
