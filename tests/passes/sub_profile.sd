@@ -1,0 +1,5 @@
+/usr/bin/foo {
+  profile sub /sub/path {
+    /file r,
+  }
+}

@@ -1,9 +1,0 @@
-alias "/old/path" -> "/new/path",
-
-profile /usr/bin/complex flags=(enforce) {
-  #include <abstractions/nameservice>
-  
-  deny /secret/** w,
-  /new/path/data r,
-  /usr/bin/helper Px -> /usr/bin/helper_profile,
-}

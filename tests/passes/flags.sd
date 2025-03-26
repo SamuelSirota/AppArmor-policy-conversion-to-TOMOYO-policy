@@ -1,0 +1,3 @@
+profile /usr/bin/foo flags=(complain, audit) {
+  /file r,
+}

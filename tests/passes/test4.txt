@@ -1,6 +1,0 @@
-profile /usr/sbin/server flags=(complain, audit) {
-  network inet tcp,
-  network inet6 udp,
-  
-  /var/run/server.pid rw,
-}

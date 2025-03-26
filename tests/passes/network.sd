@@ -1,0 +1,3 @@
+/usr/bin/foo {
+  network inet tcp,
+}

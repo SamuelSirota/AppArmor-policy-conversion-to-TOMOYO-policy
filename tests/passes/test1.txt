@@ -1,9 +1,0 @@
-#include <abstractions/base>
-#
-@{HOME} = /home/user
-profile /usr/bin/foo flags=(complain) {
-  /bin/bash ix,
-  ^myhat { #ssgdg
-    /tmp/* r,
-  }
-}

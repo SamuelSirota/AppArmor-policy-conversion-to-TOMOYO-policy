@@ -1,0 +1,3 @@
+/usr/bin/foo {
+  capability dac_override,
+}

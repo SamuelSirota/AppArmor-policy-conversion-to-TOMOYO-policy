@@ -1,9 +1,9 @@
-#include <abstractions/base>
 #
-@{HOME} = /home/user
-profile /usr/bin/foo flags=(complain) {
-  /bin/bash ix,
-  ^myhat { #ssgdg
-    /tmp/* r,
-  }
+#=DESCRIPTION abi testing - abi relative path in quotes with spaces
+#=EXRESULT PASS
+#
+
+abi "simple_tests/includes/abi/4.19 ubuntu",
+
+/does/not/exist {
 }

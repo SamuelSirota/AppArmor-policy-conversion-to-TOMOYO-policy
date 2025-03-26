@@ -8,7 +8,7 @@ parser = Lark(grammar, start="start", parser="lalr")
 
 # Example policy
 try:
-    with open("./tests/passes/test7.txt", "r") as f:
+    with open("tests/passes/variable.sd", "r") as f:
         policy = f.read()
     tree = parser.parse(policy)
     print(tree.pretty())
@@ -16,15 +16,3 @@ except Exception as e:
     print("An exception occurred")
     print(e)
     
-"""
-#include <abstractions/base>
-@{HOME} = /home/user
-profile /usr/bin/foo flags=(complain) {
-  capability dac_override,
-  network inet tcp,
-  /bin/bash ix,
-  ^myhat {
-    /tmp/* r,
-  }
-}
-"""

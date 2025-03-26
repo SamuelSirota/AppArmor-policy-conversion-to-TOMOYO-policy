@@ -1,0 +1,4 @@
+@{HOME} = /home/user
+/usr/bin/foo {
+  @{HOME}/file r,
+}
