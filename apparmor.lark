@@ -25,7 +25,7 @@ value_list: (QUOTED_STRING | UNQUOTED_VALUE)+
 
 alias_rule: "alias" QUOTED_STRING "->" QUOTED_STRING ","
 
-INCLUDE_DIRECTIVE: "#include" | "include"
+INCLUDE_DIRECTIVE: "#include"
 include_rule: INCLUDE_DIRECTIVE ["if exists"] (QUOTED_STRING | MAGIC_PATH)
 
 abi_rule: "abi" (QUOTED_STRING | UNQUOTED_VALUE) [","]
@@ -41,7 +41,7 @@ rules: (line_rule | comma_rule [","] | block_rule)*
 
 line_rule: (COMMENT | include_rule | abi_rule)
 
-comma_rule: capability_rule | network_rule | file_rule | link_rule
+comma_rule:  | file_rule | link_rucapability_rule | network_rulele
 
 capability_rule: qualifiers "capability" capability_list
 capability_list: CAPABILITY+
@@ -50,8 +50,8 @@ network_rule: qualifiers "network" [NETWORK_DOMAIN] [NETWORK_TYPE]
 
 file_rule: qualifiers ["owner"] file_rule_body
 file_rule_body: ("file" fileglob access | "file" access fileglob | fileglob access | access fileglob) ["->" exec_target]
-fileglob: ["/"] (UNQUOTED_FILEGLOB | VARIABLE) ("/" (UNQUOTED_FILEGLOB | VARIABLE))*
-access: (SINGLE_ACCESS | MULTI_ACCESS)+
+fileglob: ["/"] (UNQUOTED_FILEGLOB | VARIABLE) ( ["/"] UNQUOTED_FILEGLOB | VARIABLE)*
+access: (SINGLE_ACCESS | MULTI_ACCESS)+ //-> exclude_w_a_combination
 exec_target: profile_name
 
 link_rule: qualifiers ["owner"] "link" ["subset"] fileglob "->" fileglob
