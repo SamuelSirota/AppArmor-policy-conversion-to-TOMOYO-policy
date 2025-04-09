@@ -1,3 +1,8 @@
+#
+#=DESCRIPTION w and a conflict
+#=EXRESULT FAIL
+#
 /usr/bin/foo {
-  /usr/bin/foo wa,
+  /a wa,
 }
+

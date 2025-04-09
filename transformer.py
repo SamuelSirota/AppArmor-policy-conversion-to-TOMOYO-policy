@@ -183,6 +183,12 @@ class AppArmorTransformer(Transformer):
 
     def network_rule(self, items):
         return "network " + " ".join(str(i) for i in items if isinstance(i, str))
+    
+    def change_profile_rule(self, items):
+        return "change_profile -> " + " ".join(str(i) for i in items if isinstance(i, str))
+
+    def profile_target(self, items):
+        return str(items[0]).strip('"')
 
     def profile_name(self, items):
         return str(items[0]).strip('"')

@@ -43,7 +43,7 @@ rules: (line_rule | comma_rule [","] | block_rule)*
 
 line_rule: (COMMENT | include_rule | abi_rule)
 
-comma_rule: file_rule | link_rule | capability_rule | network_rule
+comma_rule: file_rule | link_rule | capability_rule | network_rule | change_profile_rule
 
 capability_rule: qualifiers "capability" [CAPABILITY]
 
