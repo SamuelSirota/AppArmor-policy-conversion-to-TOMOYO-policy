@@ -10,7 +10,7 @@
 - plain old data
 
 - pri tych includoch si treda dat pozor na cykly, ak nieco je napr uz nacitane tak aby som to nenacitaval znova...
-- tie aby si nejake verzie aby to neenfocovalo veci z inych verzie kde nieco nebolo
+- tie abi si nejake verzie aby to neenfocovalo veci z inych verzie kde nieco nebolo
 - search and replace pri tych premennych niektore su ale len regexy
 
 - AARE niektore napr * su podporovane aj v tomoyo ine napr {a,b} nie teda bue to treba rozbalit na rozne
