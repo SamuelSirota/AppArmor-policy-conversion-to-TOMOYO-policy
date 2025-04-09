@@ -4,6 +4,7 @@
 
 - [ ] variables doesnt work if variable has multiple values
 - [ ] AARE, file globbing doesnt change it
+- [ ] includes, recursion to include things in the includes
 
 ## TODO
 

@@ -53,7 +53,7 @@ network_rule: qualifiers "network" [NETWORK_DOMAIN] [NETWORK_TYPE]
 file_rule: qualifiers ["owner"] file_rule_body
 file_rule_body: ("file" fileglob access | "file" access fileglob | fileglob access | access fileglob) ["->" exec_target]
 fileglob: ["/"] (UNQUOTED_FILEGLOB | VARIABLE) ( ["/"] UNQUOTED_FILEGLOB | VARIABLE)*
-access: (SINGLE_ACCESS | MULTI_ACCESS)+ //-> exclude_w_a_combination
+access: (SINGLE_ACCESS | MULTI_ACCESS)+ 
 exec_target: profile_name
 
 link_rule: qualifiers ["owner"] "link" ["subset"] fileglob "->" fileglob

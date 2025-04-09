@@ -4,10 +4,13 @@ import os
 class FileRule:
     def __init__(self):
         self.path = ""
-        self.permissions = ""
+        self.permissions = []
 
     def __str__(self):
-        return f"file: {self.path} {self.permissions}" if self.path else f"no permissions {self.permissions}"
+        string = ""
+        for i in self.permissions:
+            string += f"file: {self.path} {i}\n"
+        return string.strip()
 
 class AppArmorProfile:
     def __init__(self):
@@ -139,6 +142,13 @@ class AppArmorTransformer(Transformer):
     def qualifiers(self, items):
         return None
 
+    def access(self, items):
+        combined_permissions = []
+        for item in items:
+            if isinstance(item, str):
+                combined_permissions.append(item)
+        return combined_permissions
+
     def file_rule_body(self, items):
         tokens = [item for item in items if not (isinstance(item, str) and item in ("file", "->"))]
         if len(tokens) >= 2:
@@ -152,8 +162,9 @@ class AppArmorTransformer(Transformer):
             else:
                 path = t0
                 permissions = t1
+            permissions = permissions if isinstance(permissions, list) else [permissions]
             return (path, permissions)
-        return ("", "")
+        return ("", [])
 
     def file_rule(self, items):
         for item in items:
@@ -161,7 +172,7 @@ class AppArmorTransformer(Transformer):
                 path, permissions = item
                 rule = FileRule()
                 rule.path = path.strip('"')
-                rule.permissions = permissions.strip()
+                rule.permissions = permissions
                 if 'w' in rule.permissions and 'a' in rule.permissions:
                     raise Exception(f"Permission conflict 'w' and 'a' on {rule.path}")
                 return rule
@@ -180,9 +191,6 @@ class AppArmorTransformer(Transformer):
         return str(items[0]).strip('"')
 
     def fileglob(self, items):
-        return "".join(str(i) for i in items)
-
-    def access(self, items):
         return "".join(str(i) for i in items)
 
     def exec_target(self, items):
