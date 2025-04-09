@@ -13,9 +13,14 @@
 - [x] change_profile added
 - [ ] transform AARE
 - [x] teda musis spravit tabulku ktora premeni AA permission na Tomoyo permissions
-- [ ] transform to tomoyo
+- [x] transform to tomoyo
+- [ ] add link_rule to transformer
 - [ ] zoberiem AppArmorPolicy object a prejdem jednotlive atributy (includes musim rekurzivne, variables tiez spracovat, aliasy tiez spracovat)
   - [ ] potom az mozem menit jednotlive rules v profiloch na tomoyo rules
+
+
+- [ ] vsimol som si pri konverzii do TOMOYO, ze sa mi ako profile name uklada cesta, i think
+
 
 ## Questions
 

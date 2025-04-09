@@ -209,6 +209,58 @@ class AppArmorTransformer(Transformer):
         return str(items[0]).strip('"')
 
 
+def convert_to_tomoyo(policy: AppArmorPolicy):
+    apparmor_to_tomoyo = {
+        "r": ["file read", "file getattr"],
+        "w": ["file write", "file create", "file unlink", "file chown", "file chgrp", "file chmod", "file mkdir", "file rmdir", "file truncate", "file rename"],
+        "a": ["file append"],
+        "x": ["file execute"],
+        "ux": ["file execute"],
+        "Ux": ["file execute"],
+        "px": ["file execute"],
+        "Px": ["file execute"],
+        "cx": ["file execute"],
+        "Cx": ["file execute"],
+        "ix": ["file execute"],
+        "pix": ["file execute"],
+        "Pix": ["file execute"],
+        "cix": ["file execute"],
+        "Cix": ["file execute"],
+        "pux": ["file execute"],
+        "PUx": ["file execute"],
+        "cux": ["file execute"],
+        "CUx": ["file execute"],
+        "l": ["file link", "file symlink"],
+    }
+
+    tomoyo_lines = []
+
+    def process_profile(profile: AppArmorProfile):
+        profile_name = profile.name or "<unnamed>"
+        tomoyo_lines.append(f"TOMOYO profile: {profile_name} ({profile.path})")
+        
+        for rule in profile.rules:
+            if isinstance(rule, FileRule):
+                for perm in rule.permissions:
+                    if perm in apparmor_to_tomoyo:
+                        for tomoyo_perm in apparmor_to_tomoyo[perm]:
+                            tomoyo_lines.append(f"{tomoyo_perm} {rule.path}")
+                    else:
+                        tomoyo_lines.append(f"unknown permission: {perm} on {rule.path}")
+            elif isinstance(rule, AppArmorProfile):
+                # RECURSION
+                process_profile(rule)
+            elif isinstance(rule, str):
+                tomoyo_lines.append(f"skip, nonfile rule: {rule}")
+        tomoyo_lines.append("")
+
+    for profile in policy.profiles:
+        process_profile(profile)
+
+    return "\n".join(tomoyo_lines)
+
+
+
 if __name__ == "__main__":
     from lark import Lark
 
@@ -219,7 +271,7 @@ if __name__ == "__main__":
     folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/passes/"
     
     for filename in os.listdir(folder_path):
-        print(filename)
+        print(f"Processing file: {filename}")
         file_path = os.path.join(folder_path, filename)
         if os.path.isfile(file_path):
             with open(file_path, "r") as f:
@@ -227,10 +279,13 @@ if __name__ == "__main__":
             try:
                 tree = parser.parse(policy)
                 print(tree.pretty())
-                print("transforming...")
+                print("--- Internal Representation ---")
                 transformer = AppArmorTransformer()
                 result = transformer.transform(tree)
                 print(result)
+                print("\n--- TOMOYO Policy ---")
+                tomoyo_output = convert_to_tomoyo(result)
+                print(tomoyo_output)
             except Exception as e:
                 print("An exception occurred")
                 print(e)
