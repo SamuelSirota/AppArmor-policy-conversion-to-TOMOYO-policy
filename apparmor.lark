@@ -37,7 +37,7 @@ attachment: UNQUOTED_FILEGLOB
 flags: ["flags="] "(" flag_list ")"
 flag_list: PROFILE_FLAG ("," PROFILE_FLAG)*
 
-rules: (line_rule | comma_rule | block_rule)*
+rules: (line_rule | comma_rule [","] | block_rule)*
 
 line_rule: (COMMENT | include_rule | abi_rule)
 
