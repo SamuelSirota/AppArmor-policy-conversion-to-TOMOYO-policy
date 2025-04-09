@@ -13,9 +13,10 @@ class AccessTransformer(Transformer):
             raise ValueError("Access sequence cannot contain both 'w' and 'a'.")
         return access_list
 
-parser = Lark(grammar, start="start", parser="lalr", transformer=AccessTransformer())
+parser = Lark(grammar, start="start", parser="lalr")
 folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/passes/"
-# Example policy
+
+
 
 for filename in os.listdir(folder_path):
     print(filename)

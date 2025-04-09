@@ -284,8 +284,8 @@ ALPHA = ('a', 'b', 'c', ... 'z', 'A', 'B', ... 'Z')
 
 ALPHANUMERIC = ('0', '1', '2', ... '9', 'a', 'b', 'c', ... 'z', 'A', 'B', ... 'Z')
 
-CHANGE_PROFILE RULE = 'change_profile' [ [ EXEC MODE ] EXEC COND ] [ '->' PROFILE NAME ]
+- [x] CHANGE_PROFILE RULE = 'change_profile' [ [ EXEC MODE ] EXEC COND ] [ '->' PROFILE NAME ]
 
-EXEC_MODE = ( 'safe' | 'unsafe' )
+- [x] EXEC_MODE = ( 'safe' | 'unsafe' )
 
-EXEC COND = FILEGLOB
+- [x] EXEC COND = FILEGLOB
