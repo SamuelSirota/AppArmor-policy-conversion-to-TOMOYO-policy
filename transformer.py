@@ -1,4 +1,4 @@
-from lark import Transformer, v_args
+from lark import Transformer
 import os
 
 class FileRule:
@@ -283,11 +283,11 @@ if __name__ == "__main__":
                 transformer = AppArmorTransformer()
                 result = transformer.transform(tree)
                 print(result)
-                print("\n--- TOMOYO Policy ---")
+                print("\n-------- TOMOYO Policy --------")
                 tomoyo_output = convert_to_tomoyo(result)
                 print(tomoyo_output)
             except Exception as e:
                 print("An exception occurred")
                 print(e)
-        print("-----------------------------")
+        print("-------------------------------")
     

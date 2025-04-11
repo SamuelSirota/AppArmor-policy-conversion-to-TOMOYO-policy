@@ -1,7 +1,8 @@
-%import common.WS
-%ignore WS
+%import common.WS_INLINE
+%ignore WS_INLINE
 %ignore COMMENT
 
+_NEW_LINE: "\n"
 COMMENT: /#(?!(include)).*\r?\n/
 QUOTED_STRING: /"[^"]*"/
 MAGIC_PATH: /<[^" >][^>]*>/
@@ -16,34 +17,35 @@ MULTI_ACCESS: "ix" | "ux" | "Ux" | "px" | "Px" | "cx" | "Cx" | "pix" | "Pix" | "
 NETWORK_DOMAIN: "unix" | "inet" | "ax25" | "ipx" | "appletalk" | "netrom" | "bridge" | "atmpvc" | "x25" | "inet6" | "rose" | "netbeui" | "security" | "key" | "netlink" | "packet" | "ash" | "econet" | "atmsvc" | "rds" | "sna" | "irda" | "pppox" | "wanpipe" | "llc" | "ib" | "mpls" | "can" | "tipc" | "bluetooth" | "iucv" | "rxrpc" | "isdn" | "phonet" | "ieee802154" | "caif" | "alg" | "nfc" | "vsock" | "kcm" | "qipcrtr" | "smc" | "xdp"
 NETWORK_TYPE: "stream" | "dgram" | "seqpacket" | "rdm" | "raw" | "packet" | "tcp" | "udp" | "icmp"
 
-start: (preamble_element | profile)*
+start: (_NEW_LINE |preamble_element | profile)* 
 
-preamble_element: variable_assignment | alias_rule | include_rule | abi_rule
+_new_lines: _NEW_LINE*
 
-variable_assignment: VARIABLE ("=" | "+=") value_list
-value_list: value ("," value)*
+preamble_element: variable_assignment | alias_rule | include_rule | abi_rule 
+
+variable_assignment: VARIABLE ("=" | "+=") value+ "\n"
 value: QUOTED_STRING | UNQUOTED_VALUE
 
 
-alias_rule: "alias" (QUOTED_STRING | UNQUOTED_VALUE) "->" (QUOTED_STRING | UNQUOTED_VALUE) ","
+alias_rule: "alias" (QUOTED_STRING | UNQUOTED_VALUE) "->" (QUOTED_STRING | UNQUOTED_VALUE) "," _new_lines
 
 INCLUDE_DIRECTIVE: "#include"
-include_rule: INCLUDE_DIRECTIVE ["if exists"] (QUOTED_STRING | MAGIC_PATH)
+include_rule: INCLUDE_DIRECTIVE ["if exists"] (QUOTED_STRING | MAGIC_PATH) _new_lines
 
-abi_rule: "abi" (QUOTED_STRING | UNQUOTED_VALUE) [","]
+abi_rule: "abi" (QUOTED_STRING | UNQUOTED_VALUE) [","] _new_lines
 
-profile: ["profile"] profile_name [attachment] [flags] "{" rules "}"
+profile: ["profile"] profile_name [attachment] [flags] _new_lines "{" _new_lines rules "}" _new_lines
 
 profile_name: QUOTED_STRING | UNQUOTED_FILEGLOB | UNQUOTED_PROFILE_NAME
 attachment: UNQUOTED_FILEGLOB
 flags: ["flags="] "(" flag_list ")"
 flag_list: PROFILE_FLAG ("," PROFILE_FLAG)*
 
-rules: (line_rule | comma_rule [","] | block_rule)*
+rules: (line_rule | comma_rule [","] _new_lines | block_rule)*
 
-line_rule: (COMMENT | include_rule | abi_rule)
+line_rule: (COMMENT | include_rule | abi_rule) _new_lines
 
-comma_rule: file_rule | link_rule | capability_rule | network_rule | change_profile_rule
+comma_rule: file_rule | link_rule | capability_rule | network_rule | change_profile_rule 
 
 capability_rule: qualifiers "capability" [CAPABILITY]
 
@@ -59,10 +61,9 @@ exec_target: profile_name
 link_rule: qualifiers ["owner"] "link" ["subset"] fileglob "->" fileglob
 
 block_rule: subprofile
-subprofile: "profile" profile_name [attachment] [flags] "{" rules "}"
+subprofile: "profile" profile_name [attachment] [flags] _new_lines "{" _new_lines rules "}" _new_lines
 
 qualifiers: ["audit"] ["allow" | "deny"]
 
-change_profile_rule: "change_profile" [exec_mode] [fileglob] ["->" profile_target]
+change_profile_rule: "change_profile" [exec_mode] [fileglob] ["->" profile_name] _new_lines
 exec_mode: "safe" | "unsafe"
-profile_target: profile_name | "{" profile_name ("," profile_name)* "}"
