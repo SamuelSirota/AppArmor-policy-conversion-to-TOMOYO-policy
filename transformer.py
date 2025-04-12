@@ -1,4 +1,4 @@
-from lark import Transformer
+from lark import Lark, Transformer
 import os
 
 class FileRule:
@@ -259,11 +259,62 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
 
     return "\n".join(tomoyo_lines)
 
+def preprocess_policy_file(filepath=None, seen_files=None, base_policy_dir="/etc/apparmor.d", relative_include_dir=None):
+    if seen_files is None:
+        seen_files = set()
+    if filepath is None:
+        raise ValueError("You must specify a filepath to preprocess.")
+
+    if relative_include_dir is None:
+        raise ValueError("You must specify relative_include_dir for quoted includes.")
+
+    if filepath in seen_files:
+        print(f"Skipping already included file: {filepath}")
+        return ""
+
+    seen_files.add(filepath)
+    result_lines = []
+
+    with open(filepath, "r") as f:
+        for line in f:
+            line_strip = line.strip()
+            if line_strip.startswith("#include") or line_strip.startswith("include"):
+                is_conditional = "if exists" in line_strip
+                include_path = None
+
+                if "<" in line_strip and ">" in line_strip:
+                    start = line_strip.find("<") + 1
+                    end = line_strip.find(">")
+                    raw_path = line_strip[start:end]
+                    include_path = os.path.join(base_policy_dir, raw_path)
+                elif '"' in line_strip:
+                    start = line_strip.find('"') + 1
+                    end = line_strip.rfind('"')
+                    raw_path = line_strip[start:end]
+                    if raw_path.startswith("/"):
+                        include_path = raw_path
+                    else:
+                        include_path = os.path.join(relative_include_dir, raw_path)
+                else:
+                    raise ValueError(f"Incorrect include directive: {line_strip}")
+
+                if include_path:
+                    if os.path.exists(include_path):
+                        print(f"Including file: {include_path}")
+                        included_text = preprocess_policy_file(include_path, seen_files, base_policy_dir, relative_include_dir)
+                        result_lines.append(included_text)
+                    else:
+                        if is_conditional:
+                            print(f"Optional include not found: {include_path} (skipping)")
+                        else:
+                            raise FileNotFoundError(f"Required include file not found: {include_path}")
+            else:
+                result_lines.append(line)
+
+    return "".join(result_lines)
 
 
 if __name__ == "__main__":
-    from lark import Lark
-
     with open("apparmor.lark", "r") as f:
         grammar = f.read()
 
@@ -271,13 +322,14 @@ if __name__ == "__main__":
     folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/passes/"
     
     for filename in os.listdir(folder_path):
-        print(f"Processing file: {filename}")
         file_path = os.path.join(folder_path, filename)
         if os.path.isfile(file_path):
-            with open(file_path, "r") as f:
-                policy = f.read()
             try:
-                tree = parser.parse(policy)
+                print(f"File: {filename}")
+                print("-------- Preprocessing --------")
+                preprocessed_text = preprocess_policy_file(filepath=file_path,base_policy_dir=folder_path, relative_include_dir=folder_path)
+                print("----------- Parsing -----------")
+                tree = parser.parse(preprocessed_text)
                 print(tree.pretty())
                 print("--- Internal Representation ---")
                 transformer = AppArmorTransformer()
@@ -289,5 +341,6 @@ if __name__ == "__main__":
             except Exception as e:
                 print("An exception occurred")
                 print(e)
-        print("-------------------------------")
-    
+            finally:
+                print("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
+                
