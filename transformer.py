@@ -1,5 +1,5 @@
 from lark import Lark, Transformer
-import os
+import os, re, itertools
 
 class FileRule:
     def __init__(self):
@@ -60,7 +60,6 @@ class AppArmorTransformer(Transformer):
     def variable_assignment(self, items):
         var_name = str(items[0])
         values = [str(v).strip('"') for v in items[1:]]
-        print(values)
         if var_name not in self.policy.variables:
             self.policy.variables[var_name] = []
         self.policy.variables[var_name].extend(values)
@@ -207,6 +206,40 @@ class AppArmorTransformer(Transformer):
         return str(items[0]).strip('"')
 
 
+def expand_variables(path, variables):
+    pattern = re.compile(r'@{([^}]+)}')
+
+    # Find all variables used in the path
+    matches = pattern.findall(path)
+    if not matches:
+        return [path]  # No variables to expand
+
+    # For each match, get corresponding values
+    value_lists = []
+    for var in matches:
+        values = variables.get(f'@{{{var}}}', [])
+        value_lists.append(values)
+
+    # Generate all combinations (cartesian product)
+    combinations = list(itertools.product(*value_lists))
+
+    # Build the expanded paths
+    expanded_paths = []
+    for combo in combinations:
+        expanded = path
+        for var, val in zip(matches, combo):
+            expanded = expanded.replace(f'@{{{var}}}', val)
+        expanded_paths.append(expanded)
+
+    return expanded_paths
+
+def apply_aliases(path, aliases):
+    for alias_prefix, target_prefix in aliases.items():
+        if path.startswith(alias_prefix):
+            return path.replace(alias_prefix, target_prefix, 1)
+    return path
+
+
 def convert_to_tomoyo(policy: AppArmorPolicy):
     apparmor_to_tomoyo = {
         "r": ["file read", "file getattr"],
@@ -239,12 +272,15 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
         
         for rule in profile.rules:
             if isinstance(rule, FileRule):
-                for perm in rule.permissions:
-                    if perm in apparmor_to_tomoyo:
-                        for tomoyo_perm in apparmor_to_tomoyo[perm]:
-                            tomoyo_lines.append(f"{tomoyo_perm} {rule.path}")
-                    else:
-                        tomoyo_lines.append(f"unknown permission: {perm} on {rule.path}")
+                expanded_paths = expand_variables(rule.path, policy.variables)
+                for expanded_path in expanded_paths:
+                    expanded_path = apply_aliases(expanded_path, policy.aliases)
+                    for perm in rule.permissions:
+                        if perm in apparmor_to_tomoyo:
+                            for tomoyo_perm in apparmor_to_tomoyo[perm]:
+                                tomoyo_lines.append(f"{tomoyo_perm} {expanded_path}")
+                        else:
+                            tomoyo_lines.append(f"unknown permission: {perm} on {expanded_path}")
             elif isinstance(rule, AppArmorProfile):
                 # RECURSION
                 process_profile(rule)

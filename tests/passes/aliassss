@@ -1,0 +1,6 @@
+alias /data/ -> /mnt/storage/,
+
+/usr/bin/media {
+  /data/music/** r,
+  /data/videos/** r,
+}
