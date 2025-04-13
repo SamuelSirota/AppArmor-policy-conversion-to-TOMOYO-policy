@@ -59,7 +59,8 @@ class AppArmorTransformer(Transformer):
 
     def variable_assignment(self, items):
         var_name = str(items[0])
-        values = [str(v).strip('"') for v in items[2:]]
+        values = [str(v).strip('"') for v in items[1:]]
+        print(values)
         if var_name not in self.policy.variables:
             self.policy.variables[var_name] = []
         self.policy.variables[var_name].extend(values)
@@ -201,9 +202,6 @@ class AppArmorTransformer(Transformer):
 
     def exec_target(self, items):
         return str(items[0]).strip('"')
-
-    def value_list(self, items):
-        return [str(i).strip('"') for i in items]
 
     def value(self, items):
         return str(items[0]).strip('"')
