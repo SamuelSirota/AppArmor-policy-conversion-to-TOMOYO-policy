@@ -14,15 +14,14 @@ class FileRule:
 
 class AppArmorProfile:
     def __init__(self):
-        self.name = ""
-        self.path = ""
+        self.identifier = ""
         self.rules = []
         self.flags = []
 
     def __str__(self):
         flags_str = f" flags=({', '.join(self.flags)})" if self.flags else ""
         rules_str = "\n".join(str(rule) for rule in self.rules)
-        return f"profile: {self.name} {self.path}{flags_str} {{\n{rules_str}\n}}"
+        return f"profile: {self.identifier}{flags_str} {{\n{rules_str}\n}}"
 
 class AppArmorPolicy:
     def __init__(self):
@@ -98,10 +97,8 @@ class AppArmorTransformer(Transformer):
                 elif key == "rules":
                     profile.rules.extend(value)
             elif isinstance(item, str):
-                if not profile.name:
-                    profile.name = item.strip('"')
-                elif not profile.path:
-                    profile.path = item.strip('"')
+                if not profile.identifier:
+                    profile.identifier = item.strip('"')
             elif isinstance(item, FileRule) or isinstance(item, AppArmorProfile):
                 profile.rules.append(item)
         return profile
@@ -128,10 +125,8 @@ class AppArmorTransformer(Transformer):
                 elif key == "rules":
                     profile.rules.extend(value)
             elif isinstance(item, str):
-                if not profile.name:
-                    profile.name = item.strip('"')
-                elif not profile.path:
-                    profile.path = item.strip('"')
+                if not profile.identifier:
+                    profile.identifier = item.strip('"')
             elif isinstance(item, FileRule) or isinstance(item, AppArmorProfile):
                 profile.rules.append(item)
         if self.current_profile is None:
@@ -267,8 +262,8 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
     tomoyo_lines = []
 
     def process_profile(profile: AppArmorProfile):
-        profile_name = profile.name or "<unnamed>"
-        tomoyo_lines.append(f"TOMOYO profile: {profile_name} ({profile.path})")
+        profile_identifier = profile.identifier or "<unnamed>"
+        tomoyo_lines.append(f"TOMOYO profile: {profile_identifier}")
         
         for rule in profile.rules:
             if isinstance(rule, FileRule):

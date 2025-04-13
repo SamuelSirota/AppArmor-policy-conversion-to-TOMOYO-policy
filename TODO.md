@@ -15,7 +15,7 @@
 - [x] teda musis spravit tabulku ktora premeni AA permission na Tomoyo permissions
 - [x] transform to tomoyo
 - [ ] add link_rule to transformer
-- [ ] variables and aliases transformer, tomoyo
+- [x] variables and aliases transformer, tomoyo
 - [ ] network rules transformer, tomoyo
 - [ ] change_profile transformer, tomoyo
 - [x] include rekurzivne transformer, tomoyo
