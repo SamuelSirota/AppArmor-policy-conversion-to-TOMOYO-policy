@@ -41,5 +41,6 @@
 - si to rozdelit, tie transitions mozu byt zaujimave
 - testovanie
 
+## before 17.4.2025
 
 - [ ] abi 4.0 resp pozriet kompatibility asi viem spravit iba pre 1 verziu nie kazdu

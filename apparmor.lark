@@ -7,7 +7,7 @@ COMMENT: /#(?!(include)).*\r?\n/
 QUOTED_STRING: /"[^"]*"/
 MAGIC_PATH: /<[^" >][^>]*>/
 VARIABLE: /@\{[a-zA-Z][a-zA-Z0-9_]*\}/
-UNQUOTED_FILEGLOB: /\/[^ \t\n\r\f\v,]+/
+UNQUOTED_FILEGLOB: /\/[^ \t\n\r\f\v]+/
 UNQUOTED_VALUE: /[^ \t\n\r\f\v,]+/
 UNQUOTED_PROFILE_NAME: /[a-zA-Z0-9][^ \t\n\r\f\v]*/
 CAPABILITY: /[a-z][a-z_]+/

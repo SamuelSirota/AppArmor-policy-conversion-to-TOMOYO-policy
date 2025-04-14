@@ -235,21 +235,20 @@ def apply_aliases(path, aliases):
     return path
 
 def expand_brace_expressions(pattern: str) -> list:
-    """
-    Recursively expand alternation expressions like {a,b,c} in the pattern.
-    For example: /dir/{a,b}/file  => ["/dir/a/file", "/dir/b/file"]
-    """
-    m = re.search(r'\{([^}]+)\}', pattern)
+    m = re.search(r'\{([^{}]*)\}', pattern)
     if not m:
         return [pattern]
     pre = pattern[:m.start()]
-    alternatives = m.group(1).split(',')
+    # explicitly keep empty alternatives
+    alternatives = [alt for alt in m.group(1).split(',')]
     post = pattern[m.end():]
     results = []
     for alt in alternatives:
+        # Even if alt is empty, add it back explicitly.
         for sub in expand_brace_expressions(post):
             results.append(pre + alt + sub)
     return results
+
 
 def expand_bracket_content(content: str) -> list:
     """
@@ -302,7 +301,7 @@ def escape_for_tomoyo(text: str) -> str:
     return text.replace("*", r"\*").replace("?", r"\?")
 
 def translate_apparmor_pattern(pattern: str) -> list:
-    """
+    r"""
     Translate an AppArmor glob pattern into one or more TOMOYO-compatible patterns.
     
     The translation process:
@@ -310,7 +309,7 @@ def translate_apparmor_pattern(pattern: str) -> list:
       - Expands bracket expressions (e.g. [abc] or [a-c]) into literal alternatives.
       - Replaces the recursive wildcard ** with TOMOYO's recursive directory operator "/\{dir\}/".
       - Processes negative glob constructs (e.g. {*^shadow} or {**^shadow,passwd}) by removing the caret
-        and inserting TOMOYO’s subtraction operator (here rendered as "\-").
+        and inserting TOMOYO subtraction operator (here rendered as "\-").
       - Escapes standard wildcards (* and ?), so they become "\*" and "\?".
       - Removes duplicate slashes (except at the beginning).
     """
@@ -477,6 +476,8 @@ if __name__ == "__main__":
         grammar = f.read()
 
     parser = Lark(grammar, start="start", parser="lalr")
+    for token in parser.lex('/bin/mount ux,'):
+        print(token)
     folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/fails/"
     
     for filename in os.listdir(folder_path):

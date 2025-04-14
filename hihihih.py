@@ -2,10 +2,11 @@ import re
 
 def expand_brace_expressions(pattern: str) -> list:
     """
-    Recursively expand alternation expressions like {a,b,c} in the pattern.
+    Recursively expand alternation expressions like {a,b,c} or {,u}.
     For example: /dir/{a,b}/file  => ["/dir/a/file", "/dir/b/file"]
+                 /dev/{,u}random  => ["/dev/random", "/dev/urandom"]
     """
-    m = re.search(r'\{([^}]+)\}', pattern)
+    m = re.search(r'\{([^{}]*)\}', pattern)
     if not m:
         return [pattern]
     pre = pattern[:m.start()]
@@ -124,7 +125,8 @@ if __name__ == "__main__":
         "/dir/[ab]/file",               # bracket expansion: [ab] becomes 'a' and 'b'
         "/dir/[a-z]/file",              # bracket expansion: [a-c] becomes 'a', 'b', 'c'
         "/etc/{*^shadow}",              # negative glob (non-recursive)
-        "/etc/{**^shadow,passwd}"       # alternation with a negative alternative and a plain alternative
+        "/etc/{**^shadow,passwd}",      # alternation with a negative alternative and a plain alternative
+        "/dev/{,u}random",              # should become /dev/random and /dev/urandom
     ]
     for pat in test_patterns:
         tomoyo_variants = translate_apparmor_pattern(pat)

@@ -20,13 +20,6 @@ abi <abi/3.0>,
     /@{HOME}/.foo_file  rw,
     /usr/bin/baz        Cx -> baz,
 
-    # a comment about foo's hat (subprofile), bar.
-    ^bar {
-        /lib/ld-*.so*       rmix,
-        /usr/bin/bar        rmix,
-        /var/spool/*        rwl,
-    }
-
     # a comment about foo's subprofile, baz.
     profile baz {
         #include <abstractions/bash>
