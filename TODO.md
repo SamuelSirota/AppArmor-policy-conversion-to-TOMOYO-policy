@@ -21,7 +21,7 @@
 - [x] include rekurzivne transformer, tomoyo
   - [ ] potom az mozem menit jednotlive rules v profiloch na tomoyo rules
 
-- [ ] vsimol som si pri konverzii do TOMOYO, ze sa mi ako profile name uklada cesta, i think
+- [x] vsimol som si pri konverzii do TOMOYO, ze sa mi ako profile name uklada cesta, i think
 
 ## Questions
 
@@ -40,3 +40,6 @@
 - skusit ze budem mat iba jednu a potom dajak vyskladat tu historiu, to je spojene s change_profile a tiez s tymi roznymi execmi
 - si to rozdelit, tie transitions mozu byt zaujimave
 - testovanie
+
+
+- [ ] abi 4.0 resp pozriet kompatibility asi viem spravit iba pre 1 verziu nie kazdu

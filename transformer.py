@@ -234,6 +234,116 @@ def apply_aliases(path, aliases):
             return path.replace(alias_prefix, target_prefix, 1)
     return path
 
+def expand_brace_expressions(pattern: str) -> list:
+    """
+    Recursively expand alternation expressions like {a,b,c} in the pattern.
+    For example: /dir/{a,b}/file  => ["/dir/a/file", "/dir/b/file"]
+    """
+    m = re.search(r'\{([^}]+)\}', pattern)
+    if not m:
+        return [pattern]
+    pre = pattern[:m.start()]
+    alternatives = m.group(1).split(',')
+    post = pattern[m.end():]
+    results = []
+    for alt in alternatives:
+        for sub in expand_brace_expressions(post):
+            results.append(pre + alt + sub)
+    return results
+
+def expand_bracket_content(content: str) -> list:
+    """
+    Expand the content of a bracket expression (assumed to be positive).
+    For example, "abc" -> ['a', 'b', 'c'], and "a-c" -> ['a', 'b', 'c'].
+    If the content starts with '^', a NotImplementedError is raised.
+    """
+    if content.startswith('^'):
+        raise NotImplementedError("Negative bracket expressions are not supported for literal expansion.")
+    alternatives = []
+    i = 0
+    while i < len(content):
+        # Handle character ranges such as a-c
+        if i + 2 < len(content) and content[i+1] == '-' and content[i+2] != ']':
+            start = content[i]
+            end = content[i+2]
+            for c in range(ord(start), ord(end)+1):
+                alternatives.append(chr(c))
+            i += 3
+        else:
+            alternatives.append(content[i])
+            i += 1
+    return alternatives
+
+def expand_bracket_expressions(pattern: str) -> list:
+    """
+    Recursively expand a single bracket expression in the pattern.
+    For example, "/dir/[ab]/file" expands to ["/dir/a/file", "/dir/b/file"].
+    """
+    m = re.search(r'\[([^\]]+)\]', pattern)
+    if not m:
+        return [pattern]
+    pre = pattern[:m.start()]
+    bracket_content = m.group(1)
+    if bracket_content.startswith('^'):
+        raise NotImplementedError("Negative bracket expressions are not supported for literal expansion.")
+    alternatives = expand_bracket_content(bracket_content)
+    post = pattern[m.end():]
+    results = []
+    for alt in alternatives:
+        new_pattern = pre + alt + post
+        results.extend(expand_bracket_expressions(new_pattern))
+    return results
+
+def escape_for_tomoyo(text: str) -> str:
+    """
+    Escape wildcard characters for TOMOYO.
+    (Bracket expressions are assumed to have been expanded and are no longer present.)
+    """
+    return text.replace("*", r"\*").replace("?", r"\?")
+
+def translate_apparmor_pattern(pattern: str) -> list:
+    """
+    Translate an AppArmor glob pattern into one or more TOMOYO-compatible patterns.
+    
+    The translation process:
+      - Expands brace expressions ({}).
+      - Expands bracket expressions (e.g. [abc] or [a-c]) into literal alternatives.
+      - Replaces the recursive wildcard ** with TOMOYO's recursive directory operator "/\{dir\}/".
+      - Processes negative glob constructs (e.g. {*^shadow} or {**^shadow,passwd}) by removing the caret
+        and inserting TOMOYO’s subtraction operator (here rendered as "\-").
+      - Escapes standard wildcards (* and ?), so they become "\*" and "\?".
+      - Removes duplicate slashes (except at the beginning).
+    """
+    # First, expand curly-brace alternations.
+    alternatives = expand_brace_expressions(pattern)
+    # Then, expand any bracket expressions.
+    temp = []
+    for alt in alternatives:
+        if '[' in alt:
+            temp.extend(expand_bracket_expressions(alt))
+        else:
+            temp.append(alt)
+    alternatives = temp
+
+    results = []
+    for alt in alternatives:
+        # --- Handle negative glob constructs that include a caret ---
+        if "^" in alt:
+            # Replace recursive negative: if "**^" is found, replace with recursive operator and negative marker.
+            alt = alt.replace("**^", r"/\{dir\}/\-")
+            # Replace an asterisk immediately followed by a caret with escaped asterisk plus "\-"
+            alt = re.sub(r'(\*)(\^)', lambda m: escape_for_tomoyo(m.group(1)) + r"\-", alt)
+            # Also replace "/^" with "/\-"
+            alt = alt.replace("/^", r"/\-")
+        else:
+            # Replace recursive wildcard: ** → /\{dir\}/
+            alt = alt.replace("**", r"/\{dir\}/")
+        # Remove duplicate slashes (except at the beginning).
+        alt = re.sub(r'(?<!:)/{2,}', '/', alt)
+        # Escape any remaining wildcards: * and ?.
+        alt = alt.replace("*", r"\*").replace("?", r"\?")
+        results.append(alt)
+    return results
 
 def convert_to_tomoyo(policy: AppArmorPolicy):
     apparmor_to_tomoyo = {
@@ -269,15 +379,32 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
             if isinstance(rule, FileRule):
                 expanded_paths = expand_variables(rule.path, policy.variables)
                 for expanded_path in expanded_paths:
+                    # Apply alias transformation.
                     expanded_path = apply_aliases(expanded_path, policy.aliases)
-                    for perm in rule.permissions:
-                        if perm in apparmor_to_tomoyo:
-                            for tomoyo_perm in apparmor_to_tomoyo[perm]:
-                                tomoyo_lines.append(f"{tomoyo_perm} {expanded_path}")
-                        else:
-                            tomoyo_lines.append(f"unknown permission: {perm} on {expanded_path}")
+
+                    # --- NEW: Translate AppArmor pattern to TOMOYO-compatible patterns ---
+                    if any(c in expanded_path for c in "{[?*"):
+                        # Use the pattern translator to generate variants.
+                        tomoyo_variants = translate_apparmor_pattern(expanded_path)
+                    else:
+                        tomoyo_variants = [expanded_path]
+
+                    # Optional: Retain existing glob expansion for file resolution (if required)
+                    # Uncomment the following block if you want to resolve concrete file matches.
+                    # if any(c in expanded_path for c in "*?["):
+                    #     matched_paths = resolve_globbed_paths(expanded_path, root="/")
+                    # else:
+                    #     matched_paths = [expanded_path]
+
+                    # Process each translated variant with its permissions.
+                    for variant in tomoyo_variants:
+                        for perm in rule.permissions:
+                            if perm in apparmor_to_tomoyo:
+                                for tomoyo_perm in apparmor_to_tomoyo[perm]:
+                                    tomoyo_lines.append(f"{tomoyo_perm} {variant}")
+                            else:
+                                tomoyo_lines.append(f"unknown permission: {perm} on {variant}")
             elif isinstance(rule, AppArmorProfile):
-                # RECURSION
                 process_profile(rule)
             elif isinstance(rule, str):
                 tomoyo_lines.append(f"skip, nonfile rule: {rule}")
@@ -287,6 +414,8 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
         process_profile(profile)
 
     return "\n".join(tomoyo_lines)
+
+
 
 def preprocess_policy_file(filepath=None, seen_files=None, base_policy_dir="/etc/apparmor.d", relative_include_dir=None):
     if seen_files is None:
@@ -348,7 +477,7 @@ if __name__ == "__main__":
         grammar = f.read()
 
     parser = Lark(grammar, start="start", parser="lalr")
-    folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/passes/"
+    folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/fails/"
     
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)

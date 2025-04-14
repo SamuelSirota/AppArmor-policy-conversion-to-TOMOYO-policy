@@ -32,7 +32,7 @@ alias_rule: "alias" (QUOTED_STRING | UNQUOTED_VALUE) "->" (QUOTED_STRING | UNQUO
 INCLUDE_DIRECTIVE: "#include"
 include_rule: INCLUDE_DIRECTIVE ["if exists"] (QUOTED_STRING | MAGIC_PATH) _new_lines
 
-abi_rule: "abi" (QUOTED_STRING | UNQUOTED_VALUE) [","] _new_lines
+abi_rule: "abi" (QUOTED_STRING | UNQUOTED_VALUE) "," _new_lines
 
 profile: ["profile"] profile_name [attachment] [flags] _new_lines "{" _new_lines rules "}" _new_lines
 
