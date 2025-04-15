@@ -478,7 +478,7 @@ if __name__ == "__main__":
     parser = Lark(grammar, start="start", parser="lalr")
     for token in parser.lex('/bin/mount ux,'):
         print(token)
-    folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/fails/"
+    folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/passes/"
     
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)

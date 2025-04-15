@@ -11,10 +11,10 @@ UNQUOTED_FILEGLOB: /\/[^ \t\n\r\f\v]+/
 UNQUOTED_VALUE: /[^ \t\n\r\f\v,]+/
 UNQUOTED_PROFILE_NAME: /[a-zA-Z0-9][^ \t\n\r\f\v]*/
 CAPABILITY: /[a-z][a-z_]+/
-PROFILE_FLAG: "complain" | "audit" | "enforce" | "mediate_deleted" | "attach_disconnected" | "chroot_relative"
+PROFILE_FLAG: "complain" | "kill" | "enforce" | "default_allow" | "unconfined" | "prompt" | "audit" | "mediate_deleted" | "attach_disconnected" | "chroot_relative" | "debug" | "interruptible"
 SINGLE_ACCESS: "r" | "w" | "a" | "l" | "k" | "m"
 MULTI_ACCESS: "ix" | "ux" | "Ux" | "px" | "Px" | "cx" | "Cx" | "pix" | "Pix" | "cix" | "Cix" | "pux" | "PUx" | "cux" | "CUx" | "x"
-NETWORK_DOMAIN: "unix" | "inet" | "ax25" | "ipx" | "appletalk" | "netrom" | "bridge" | "atmpvc" | "x25" | "inet6" | "rose" | "netbeui" | "security" | "key" | "netlink" | "packet" | "ash" | "econet" | "atmsvc" | "rds" | "sna" | "irda" | "pppox" | "wanpipe" | "llc" | "ib" | "mpls" | "can" | "tipc" | "bluetooth" | "iucv" | "rxrpc" | "isdn" | "phonet" | "ieee802154" | "caif" | "alg" | "nfc" | "vsock" | "kcm" | "qipcrtr" | "smc" | "xdp"
+NETWORK_DOMAIN: "unix" | "inet" | "ax25" | "ipx" | "appletalk" | "netrom" | "bridge" | "atmpvc" | "x25" | "inet6" | "rose" | "netbeui" | "security" | "key" | "netlink" | "packet" | "ash" | "econet" | "atmsvc" | "rds" | "sna" | "irda" | "pppox" | "wanpipe" | "llc" | "ib" | "mpls" | "can" | "tipc" | "bluetooth" | "iucv" | "rxrpc" | "isdn" | "phonet" | "ieee802154" | "caif" | "alg" | "nfc" | "vsock" | "kcm" | "qipcrtr" | "smc" | "xdp" | "mctp"
 NETWORK_TYPE: "stream" | "dgram" | "seqpacket" | "rdm" | "raw" | "packet" | "tcp" | "udp" | "icmp"
 
 start: (_NEW_LINE |preamble_element | profile)* 
@@ -45,9 +45,10 @@ rules: (line_rule | comma_rule [","] _new_lines | block_rule)*
 
 line_rule: (COMMENT | include_rule | abi_rule) _new_lines
 
-comma_rule: file_rule | link_rule | capability_rule | network_rule | change_profile_rule 
+comma_rule: file_rule | link_rule | capability_rule | network_rule | change_profile_rule | all_rule
 
-capability_rule: qualifiers "capability" [CAPABILITY]
+capability_rule: qualifiers "capability" [capability_list]
+capability_list: CAPABILITY (CAPABILITY)*
 
 
 network_rule: qualifiers "network" [NETWORK_DOMAIN] [NETWORK_TYPE]
@@ -67,3 +68,5 @@ qualifiers: ["audit"] ["allow" | "deny"]
 
 change_profile_rule: "change_profile" [exec_mode] [fileglob] ["->" profile_name] _new_lines
 exec_mode: "safe" | "unsafe"
+
+all_rule: "all"

@@ -3,7 +3,7 @@
 ## FIXME
 
 - [x] variables doesnt work if variable has multiple values
-- [ ] AARE, file globbing doesnt change it
+- [x] AARE, file globbing doesnt change it
 - [x] includes, recursion to include things in the includes
 
 ## TODO
@@ -11,15 +11,12 @@
 - [x] internal representation of the policy
 - [x] transform policy to internal representation
 - [x] change_profile added
-- [ ] transform AARE
+- [x] transform AARE
 - [x] teda musis spravit tabulku ktora premeni AA permission na Tomoyo permissions
 - [x] transform to tomoyo
 - [ ] add link_rule to transformer
 - [x] variables and aliases transformer, tomoyo
-- [ ] network rules transformer, tomoyo
-- [ ] change_profile transformer, tomoyo
 - [x] include rekurzivne transformer, tomoyo
-  - [ ] potom az mozem menit jednotlive rules v profiloch na tomoyo rules
 
 - [x] vsimol som si pri konverzii do TOMOYO, ze sa mi ako profile name uklada cesta, i think
 
@@ -44,3 +41,7 @@
 ## before 17.4.2025
 
 - [ ] abi 4.0 resp pozriet kompatibility asi viem spravit iba pre 1 verziu nie kazdu
+
+- [ ] tieto rules su not done: HAT, Network, mount/unmount/remount, mqueue, io_uring, userns, pivot, ptrace, signal, dbus, unix, rlimit
+- [ ] tieto rules netransformujem do TOMOYO: abi_rule, profile flags/attachments, capability, change_profile, network_rule, all_rule, link_rule
+- [ ] tieto rules niesu ani saved do internal representation: change_profile, all_rule, capability, link_rule
