@@ -68,3 +68,5 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 - spomenut, aj testy parsovania
 - docstringy pekne formatovat
 - 
+
+- [ ] SPRAV HATS and CHANGE PROFILES

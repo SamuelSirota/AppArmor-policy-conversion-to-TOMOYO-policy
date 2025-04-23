@@ -12,6 +12,19 @@ class FileRule:
             string += f"file: {self.path} {i}\n"
         return string.strip()
 
+class ChangeProfileRule:
+    """
+    Represents a change_profile rule in AppArmor, mapping execution to a different profile.
+    """
+    def __init__(self, path, target_profile, mode=None):
+        self.path = path
+        self.target_profile = target_profile
+        self.mode = mode  # 'safe' or 'unsafe', if provided
+
+    def __str__(self):
+        m = f"{self.mode} " if self.mode else ""
+        return f"change_profile {m}{self.path} -> {self.target_profile}"
+
 class AppArmorProfile:
     def __init__(self):
         self.identifier = ""
@@ -180,7 +193,20 @@ class AppArmorTransformer(Transformer):
         return "network " + " ".join(str(i) for i in items if isinstance(i, str))
     
     def change_profile_rule(self, items):
-        return "change_profile -> " + " ".join(str(i) for i in items if isinstance(i, str))
+        # items: [mode?, path?, '->', profile_name]
+        mode = None
+        path = None
+        target = None
+        for item in items:
+            if item in ("safe", "unsafe"):
+                mode = item
+            elif isinstance(item, str) and item.startswith("/"):
+                # a file path
+                path = item.strip('"')
+            elif isinstance(item, str) and not item.startswith("/"):
+                # assume profile name
+                target = item.strip('"')
+        return ChangeProfileRule(path, target, mode)
 
     def profile_target(self, items):
         return str(items[0]).strip('"')
@@ -399,8 +425,14 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                                     tomoyo_lines.append(f"{tomoyo_perm} {variant}")
                             else:
                                 tomoyo_lines.append(f"unknown permission: {perm} on {variant}")
-            elif isinstance(rule, AppArmorProfile):
-                process_profile(rule)
+            elif isinstance(rule, ChangeProfileRule):
+                # Map to TOMOYO domain transition rule
+                # Expand variables and aliases
+                paths = expand_variables(rule.path, policy.variables)
+                for p in paths:
+                    p_applied = apply_aliases(p, policy.aliases).replace(",", "")
+                    # Use Tomoyo's domain transition syntax
+                    tomoyo_lines.append(f"domain change {profile_identifier} -> {p_applied}")
             elif isinstance(rule, str):
                 tomoyo_lines.append(f"skip, nonfile rule: {rule}")
         tomoyo_lines.append("")
@@ -472,7 +504,7 @@ if __name__ == "__main__":
         grammar = f.read()
 
     parser = Lark(grammar, start="start", parser="lalr")
-    folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/fails/"
+    folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/passes/"
     
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)
