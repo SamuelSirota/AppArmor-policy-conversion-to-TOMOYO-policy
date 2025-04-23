@@ -1,6 +1,7 @@
 from lark import Lark, Transformer
 import os, re, itertools
 
+
 class FileRule:
     def __init__(self):
         self.path = ""
@@ -12,18 +13,17 @@ class FileRule:
             string += f"file: {self.path} {i}\n"
         return string.strip()
 
+
 class ChangeProfileRule:
-    """
-    Represents a change_profile rule in AppArmor, mapping execution to a different profile.
-    """
     def __init__(self, path, target_profile, mode=None):
         self.path = path
         self.target_profile = target_profile
-        self.mode = mode  # 'safe' or 'unsafe', if provided
+        self.mode = mode
 
     def __str__(self):
         m = f"{self.mode} " if self.mode else ""
-        return f"change_profile {m}{self.path} -> {self.target_profile}"
+        return f"change_profile {m}-> {self.path}"
+
 
 class AppArmorProfile:
     def __init__(self):
@@ -36,13 +36,14 @@ class AppArmorProfile:
         rules_str = "\n".join(str(rule) for rule in self.rules)
         return f"profile: {self.identifier}{flags_str} {{\n{rules_str}\n}}"
 
+
 class AppArmorPolicy:
     def __init__(self):
-        self.includes = []    # List of include paths
-        self.variables = {}   # Dictionary for variable assignments
-        self.aliases = {}     # Dictionary for alias rules
-        self.profiles = []    # List of AppArmorProfiles
-    
+        self.includes = []  # List of include paths
+        self.variables = {}  # Dictionary for variable assignments
+        self.aliases = {}  # Dictionary for alias rules
+        self.profiles = []  # List of AppArmorProfiles
+
     def __str__(self):
         lines = []
         for inc in self.includes:
@@ -83,7 +84,6 @@ class AppArmorTransformer(Transformer):
         self.policy.aliases[alias] = target
         return f"alias {alias} -> {target}"
 
-    # RULES
     def abi_rule(self, items):
         return "abi " + str(items[0]).strip('"')
 
@@ -158,7 +158,11 @@ class AppArmorTransformer(Transformer):
         return combined_permissions
 
     def file_rule_body(self, items):
-        tokens = [item for item in items if not (isinstance(item, str) and item in ("file", "->"))]
+        tokens = [
+            item
+            for item in items
+            if not (isinstance(item, str) and item in ("file", "->"))
+        ]
         if len(tokens) >= 2:
             t0, t1 = tokens[0], tokens[1]
             if isinstance(t0, str) and t0.startswith("/"):
@@ -170,7 +174,9 @@ class AppArmorTransformer(Transformer):
             else:
                 path = t0
                 permissions = t1
-            permissions = permissions if isinstance(permissions, list) else [permissions]
+            permissions = (
+                permissions if isinstance(permissions, list) else [permissions]
+            )
             return (path, permissions)
         return ("", [])
 
@@ -181,7 +187,7 @@ class AppArmorTransformer(Transformer):
                 rule = FileRule()
                 rule.path = path.strip('"')
                 rule.permissions = permissions
-                if 'w' in rule.permissions and 'a' in rule.permissions:
+                if "w" in rule.permissions and "a" in rule.permissions:
                     raise Exception(f"Permission conflict 'w' and 'a' on {rule.path}")
                 return rule
         return FileRule()
@@ -191,9 +197,8 @@ class AppArmorTransformer(Transformer):
 
     def network_rule(self, items):
         return "network " + " ".join(str(i) for i in items if isinstance(i, str))
-    
+
     def change_profile_rule(self, items):
-        # items: [mode?, path?, '->', profile_name]
         mode = None
         path = None
         target = None
@@ -201,10 +206,8 @@ class AppArmorTransformer(Transformer):
             if item in ("safe", "unsafe"):
                 mode = item
             elif isinstance(item, str) and item.startswith("/"):
-                # a file path
                 path = item.strip('"')
             elif isinstance(item, str) and not item.startswith("/"):
-                # assume profile name
                 target = item.strip('"')
         return ChangeProfileRule(path, target, mode)
 
@@ -228,45 +231,54 @@ class AppArmorTransformer(Transformer):
 
 
 def expand_variables(path, variables):
-    pattern = re.compile(r'@{([^}]+)}')
+    """
+    Expand variables in the given path using the provided variable dictionary.
+    The variables are expected to be in the format @{var_name}.
+    If a variable is not found, it will be replaced with an empty string.
+    """
+    pattern = re.compile(r"@{([^}]+)}")
     matches = pattern.findall(path)
     if not matches:
         return [path]
-
     value_lists = []
     for var in matches:
-        # note: variables keys include the @{…} in your code
-        values = variables.get(f'@{{{var}}}', [])
+        values = variables.get(f"@{{{var}}}", [])
         value_lists.append(values)
-
     expanded_paths = []
     for combo in itertools.product(*value_lists):
         expanded = path
         for var, val in zip(matches, combo):
-            expanded = expanded.replace(f'@{{{var}}}', val)
-        # collapse any duplicate slashes:
-        expanded = re.sub(r'/{2,}', '/', expanded)
+            expanded = expanded.replace(f"@{{{var}}}", val)
+        expanded = re.sub(r"/{2,}", "/", expanded)
         expanded_paths.append(expanded)
-
     return expanded_paths
 
+
 def apply_aliases(path, aliases):
+    """
+    Apply alias transformations to the given path using the provided alias dictionary.
+    The aliases are expected to be in the format alias_prefix -> target_prefix.
+    """
     for alias_prefix, target_prefix in aliases.items():
         if path.startswith(alias_prefix):
             return path.replace(alias_prefix, target_prefix, 1)
     return path
 
+
 def expand_brace_expressions(pattern: str) -> list:
-    m = re.search(r'\{([^{}]*)\}', pattern)
+    """
+    Recursively expand a single brace expression in the pattern.
+    For example, "/dir/{a,b}/file" expands to ["/dir/a/file", "/dir/b/file"].
+    """
+    m = re.search(r"\{([^{}]*)\}", pattern)
     if not m:
         return [pattern]
-    pre = pattern[:m.start()]
-    # explicitly keep empty alternatives
-    alternatives = [alt for alt in m.group(1).split(',')]
-    post = pattern[m.end():]
+    pre = pattern[: m.start()]
+
+    alternatives = [alt for alt in m.group(1).split(",")]
+    post = pattern[m.end() :]
     results = []
     for alt in alternatives:
-        # Even if alt is empty, add it back explicitly.
         for sub in expand_brace_expressions(post):
             results.append(pre + alt + sub)
     return results
@@ -278,16 +290,17 @@ def expand_bracket_content(content: str) -> list:
     For example, "abc" -> ['a', 'b', 'c'], and "a-c" -> ['a', 'b', 'c'].
     If the content starts with '^', a NotImplementedError is raised.
     """
-    if content.startswith('^'):
-        raise NotImplementedError("Negative bracket expressions are not supported for literal expansion.")
+    if content.startswith("^"):
+        raise NotImplementedError(
+            "Negative bracket expressions are not supported for literal expansion."
+        )
     alternatives = []
     i = 0
     while i < len(content):
-        # Handle character ranges such as a-c
-        if i + 2 < len(content) and content[i+1] == '-' and content[i+2] != ']':
+        if i + 2 < len(content) and content[i + 1] == "-" and content[i + 2] != "]":
             start = content[i]
-            end = content[i+2]
-            for c in range(ord(start), ord(end)+1):
+            end = content[i + 2]
+            for c in range(ord(start), ord(end) + 1):
                 alternatives.append(chr(c))
             i += 3
         else:
@@ -295,25 +308,29 @@ def expand_bracket_content(content: str) -> list:
             i += 1
     return alternatives
 
+
 def expand_bracket_expressions(pattern: str) -> list:
     """
     Recursively expand a single bracket expression in the pattern.
     For example, "/dir/[ab]/file" expands to ["/dir/a/file", "/dir/b/file"].
     """
-    m = re.search(r'\[([^\]]+)\]', pattern)
+    m = re.search(r"\[([^\]]+)\]", pattern)
     if not m:
         return [pattern]
-    pre = pattern[:m.start()]
+    pre = pattern[: m.start()]
     bracket_content = m.group(1)
-    if bracket_content.startswith('^'):
-        raise NotImplementedError("Negative bracket expressions are not supported for literal expansion.")
+    if bracket_content.startswith("^"):
+        raise NotImplementedError(
+            "Negative bracket expressions are not supported for literal expansion."
+        )
     alternatives = expand_bracket_content(bracket_content)
-    post = pattern[m.end():]
+    post = pattern[m.end() :]
     results = []
     for alt in alternatives:
         new_pattern = pre + alt + post
         results.extend(expand_bracket_expressions(new_pattern))
     return results
+
 
 def escape_for_tomoyo(text: str) -> str:
     """
@@ -322,10 +339,11 @@ def escape_for_tomoyo(text: str) -> str:
     """
     return text.replace("*", r"\*").replace("?", r"\?")
 
+
 def translate_apparmor_pattern(pattern: str) -> list:
     r"""
     Translate an AppArmor glob pattern into one or more TOMOYO-compatible patterns.
-    
+
     The translation process:
       - Expands brace expressions ({}).
       - Expands bracket expressions (e.g. [abc] or [a-c]) into literal alternatives.
@@ -335,12 +353,10 @@ def translate_apparmor_pattern(pattern: str) -> list:
       - Escapes standard wildcards (* and ?), so they become "\*" and "\?".
       - Removes duplicate slashes (except at the beginning).
     """
-    # First, expand curly-brace alternations.
     alternatives = expand_brace_expressions(pattern)
-    # Then, expand any bracket expressions.
     temp = []
     for alt in alternatives:
-        if '[' in alt:
+        if "[" in alt:
             temp.extend(expand_bracket_expressions(alt))
         else:
             temp.append(alt)
@@ -348,28 +364,45 @@ def translate_apparmor_pattern(pattern: str) -> list:
 
     results = []
     for alt in alternatives:
-        # --- Handle negative glob constructs that include a caret ---
         if "^" in alt:
-            # Replace recursive negative: if "**^" is found, replace with recursive operator and negative marker.
             alt = alt.replace("**^", r"/\{dir\}/\-")
-            # Replace an asterisk immediately followed by a caret with escaped asterisk plus "\-"
-            alt = re.sub(r'(\*)(\^)', lambda m: escape_for_tomoyo(m.group(1)) + r"\-", alt)
-            # Also replace "/^" with "/\-"
+            alt = re.sub(
+                r"(\*)(\^)", lambda m: escape_for_tomoyo(m.group(1)) + r"\-", alt
+            )
             alt = alt.replace("/^", r"/\-")
         else:
-            # Replace recursive wildcard: ** → /\{dir\}/
             alt = alt.replace("**", r"/\{dir\}/")
-        # Remove duplicate slashes (except at the beginning).
-        alt = re.sub(r'(?<!:)/{2,}', '/', alt)
-        # Escape any remaining wildcards: * and ?.
+        alt = re.sub(r"(?<!:)/{2,}", "/", alt)
         alt = alt.replace("*", r"\*").replace("?", r"\?")
         results.append(alt)
     return results
 
+
 def convert_to_tomoyo(policy: AppArmorPolicy):
+    """
+    Convert AppArmor policy to TOMOYO format.
+    The conversion process:
+      - For each profile, iterate through its rules.
+      - For file rules, expand variables and apply aliases.
+      - Translate AppArmor glob patterns to TOMOYO-compatible patterns.
+      - Map AppArmor permissions to TOMOYO permissions.
+      - Handle change profile rules.
+      - Handle non-file rules by skipping them.
+    """
     apparmor_to_tomoyo = {
         "r": ["file read", "file getattr"],
-        "w": ["file write", "file create", "file unlink", "file chown", "file chgrp", "file chmod", "file mkdir", "file rmdir", "file truncate", "file rename"],
+        "w": [
+            "file write",
+            "file create",
+            "file unlink",
+            "file chown",
+            "file chgrp",
+            "file chmod",
+            "file mkdir",
+            "file rmdir",
+            "file truncate",
+            "file rename",
+        ],
         "a": ["file append"],
         "x": ["file execute"],
         "ux": ["file execute"],
@@ -395,68 +428,61 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
     def process_profile(profile: AppArmorProfile):
         profile_identifier = profile.identifier or "<unnamed>"
         tomoyo_lines.append(f"TOMOYO profile: {profile_identifier}")
-        
+
         for rule in profile.rules:
             if isinstance(rule, FileRule):
                 expanded_paths = expand_variables(rule.path, policy.variables)
                 for expanded_path in expanded_paths:
-                    # Apply alias transformation.
                     expanded_path = apply_aliases(expanded_path, policy.aliases)
-
-                    # --- NEW: Translate AppArmor pattern to TOMOYO-compatible patterns ---
                     if any(c in expanded_path for c in "{[?*"):
-                        # Use the pattern translator to generate variants.
                         tomoyo_variants = translate_apparmor_pattern(expanded_path)
                     else:
                         tomoyo_variants = [expanded_path]
-
-                    # Optional: Retain existing glob expansion for file resolution (if required)
-                    # Uncomment the following block if you want to resolve concrete file matches.
-                    # if any(c in expanded_path for c in "*?["):
-                    #     matched_paths = resolve_globbed_paths(expanded_path, root="/")
-                    # else:
-                    #     matched_paths = [expanded_path]
-
-                    # Process each translated variant with its permissions.
                     for variant in tomoyo_variants:
                         for perm in rule.permissions:
                             if perm in apparmor_to_tomoyo:
                                 for tomoyo_perm in apparmor_to_tomoyo[perm]:
                                     tomoyo_lines.append(f"{tomoyo_perm} {variant}")
                             else:
-                                tomoyo_lines.append(f"unknown permission: {perm} on {variant}")
+                                tomoyo_lines.append(
+                                    f"unknown permission: {perm} on {variant}"
+                                )
             elif isinstance(rule, ChangeProfileRule):
-                # Map to TOMOYO domain transition rule
-                # Expand variables and aliases
                 paths = expand_variables(rule.path, policy.variables)
                 for p in paths:
                     p_applied = apply_aliases(p, policy.aliases).replace(",", "")
-                    # Use Tomoyo's domain transition syntax
-                    tomoyo_lines.append(f"domain change {profile_identifier} -> {p_applied}")
+                    tomoyo_lines.append(
+                        f"domain change {profile_identifier} -> {p_applied}"
+                    )
             elif isinstance(rule, str):
                 tomoyo_lines.append(f"skip, nonfile rule: {rule}")
         tomoyo_lines.append("")
 
     for profile in policy.profiles:
         process_profile(profile)
-
     return "\n".join(tomoyo_lines)
 
 
-
-def preprocess_policy_file(filepath=None, seen_files=None, base_policy_dir="/etc/apparmor.d", relative_include_dir=None):
+def preprocess_policy_file(
+    filepath=None,
+    seen_files=None,
+    base_policy_dir="/etc/apparmor.d",
+    relative_include_dir=None,
+):
+    """
+    Preprocess an AppArmor policy file to handle includes and variable expansions.
+    This function reads the file, processes any #include directives, and returns
+    the preprocessed content as a string.
+    """
     if seen_files is None:
         seen_files = set()
     if filepath is None:
         raise ValueError("You must specify a filepath to preprocess.")
-
     if relative_include_dir is None:
         raise ValueError("You must specify relative_include_dir for quoted includes.")
-
     if filepath in seen_files:
         print(f"Skipping already included file: {filepath}")
         return ""
-
     seen_files.add(filepath)
     result_lines = []
 
@@ -482,37 +508,47 @@ def preprocess_policy_file(filepath=None, seen_files=None, base_policy_dir="/etc
                         include_path = os.path.join(relative_include_dir, raw_path)
                 else:
                     raise ValueError(f"Incorrect include directive: {line_strip}")
-
                 if include_path:
                     if os.path.exists(include_path):
                         print(f"Including file: {include_path}")
-                        included_text = preprocess_policy_file(include_path, seen_files, base_policy_dir, relative_include_dir)
+                        included_text = preprocess_policy_file(
+                            include_path,
+                            seen_files,
+                            base_policy_dir,
+                            relative_include_dir,
+                        )
                         result_lines.append(included_text)
                     else:
                         if is_conditional:
-                            print(f"Optional include not found: {include_path} (skipping)")
+                            print(
+                                f"Optional include not found: {include_path} (skipping)"
+                            )
                         else:
-                            raise FileNotFoundError(f"Required include file not found: {include_path}")
+                            raise FileNotFoundError(
+                                f"Required include file not found: {include_path}"
+                            )
             else:
                 result_lines.append(line)
-
     return "".join(result_lines)
 
 
 if __name__ == "__main__":
     with open("apparmor.lark", "r") as f:
         grammar = f.read()
-
     parser = Lark(grammar, start="start", parser="lalr")
     folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/passes/"
-    
+
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)
         if os.path.isfile(file_path):
             try:
                 print(f"File: {filename}")
                 print("-------- Preprocessing --------")
-                preprocessed_text = preprocess_policy_file(filepath=file_path,base_policy_dir=folder_path, relative_include_dir=folder_path)
+                preprocessed_text = preprocess_policy_file(
+                    filepath=file_path,
+                    base_policy_dir=folder_path,
+                    relative_include_dir=folder_path,
+                )
                 print("----------- Parsing -----------")
                 tree = parser.parse(preprocessed_text)
                 print(tree.pretty())
@@ -528,4 +564,3 @@ if __name__ == "__main__":
                 print(e)
             finally:
                 print("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
-                
