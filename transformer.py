@@ -203,27 +203,23 @@ class AppArmorTransformer(Transformer):
 
 def expand_variables(path, variables):
     pattern = re.compile(r'@{([^}]+)}')
-
-    # Find all variables used in the path
     matches = pattern.findall(path)
     if not matches:
-        return [path]  # No variables to expand
+        return [path]
 
-    # For each match, get corresponding values
     value_lists = []
     for var in matches:
+        # note: variables keys include the @{…} in your code
         values = variables.get(f'@{{{var}}}', [])
         value_lists.append(values)
 
-    # Generate all combinations (cartesian product)
-    combinations = list(itertools.product(*value_lists))
-
-    # Build the expanded paths
     expanded_paths = []
-    for combo in combinations:
+    for combo in itertools.product(*value_lists):
         expanded = path
         for var, val in zip(matches, combo):
             expanded = expanded.replace(f'@{{{var}}}', val)
+        # collapse any duplicate slashes:
+        expanded = re.sub(r'/{2,}', '/', expanded)
         expanded_paths.append(expanded)
 
     return expanded_paths
@@ -476,9 +472,7 @@ if __name__ == "__main__":
         grammar = f.read()
 
     parser = Lark(grammar, start="start", parser="lalr")
-    for token in parser.lex('/bin/mount ux,'):
-        print(token)
-    folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/passes/"
+    folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/fails/"
     
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)
