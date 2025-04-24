@@ -14,8 +14,13 @@ CAPABILITY: /[a-z][a-z_]+/
 PROFILE_FLAG: "complain" | "kill" | "enforce" | "default_allow" | "unconfined" | "prompt" | "audit" | "mediate_deleted" | "attach_disconnected" | "chroot_relative" | "debug" | "interruptible"
 SINGLE_ACCESS: "r" | "w" | "a" | "l" | "k" | "m"
 MULTI_ACCESS: "ix" | "ux" | "Ux" | "px" | "Px" | "cx" | "Cx" | "pix" | "Pix" | "cix" | "Cix" | "pux" | "PUx" | "cux" | "CUx" | "x"
+
+NETWORK_ACCESS: "create" | "bind" | "listen" | "accept" | "connect" | "shutdown" | "getattr" | "setattr" | "getopt" | "setopt" | "send" | "receive" | "r" | "w" | "rw"
 NETWORK_DOMAIN: "unix" | "inet" | "ax25" | "ipx" | "appletalk" | "netrom" | "bridge" | "atmpvc" | "x25" | "inet6" | "rose" | "netbeui" | "security" | "key" | "netlink" | "packet" | "ash" | "econet" | "atmsvc" | "rds" | "sna" | "irda" | "pppox" | "wanpipe" | "llc" | "ib" | "mpls" | "can" | "tipc" | "bluetooth" | "iucv" | "rxrpc" | "isdn" | "phonet" | "ieee802154" | "caif" | "alg" | "nfc" | "vsock" | "kcm" | "qipcrtr" | "smc" | "xdp" | "mctp"
-NETWORK_TYPE: "stream" | "dgram" | "seqpacket" | "rdm" | "raw" | "packet" | "tcp" | "udp" | "icmp"
+NETWORK_TYPE: "stream" | "dgram" | "seqpacket" | "rdm" | "raw" | "packet"
+PROTOCOL: "tcp" | "udp" | "icmp"
+NETWORK_IP: /(?:\d{1,3}\.){3}\d{1,3}/ | /(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}/
+NETWORK_PORT: /[0-9]{1,5}/
 
 start: (_NEW_LINE |preamble_element | profile)* 
 
@@ -51,7 +56,13 @@ capability_rule: qualifiers "capability" [capability_list]
 capability_list: CAPABILITY (CAPABILITY)*
 
 
-network_rule: qualifiers "network" [NETWORK_DOMAIN] [NETWORK_TYPE]
+network_rule: qualifiers? "network" [network_access_expr] [NETWORK_DOMAIN] [NETWORK_TYPE | PROTOCOL] [network_local_expr] [network_peer_expr] [","] _NEW_LINE
+NETWORK_ACCESS_LIST: "(" NETWORK_ACCESS ("," NETWORK_ACCESS )* ")"
+network_access_expr: NETWORK_ACCESS | NETWORK_ACCESS_LIST
+network_ip_cond: "ip" "=" ("none" | NETWORK_IP)
+network_port_cond: "port" "=" NETWORK_PORT
+network_local_expr: (network_ip_cond | network_port_cond)*
+network_peer_expr: "peer" "=" "(" (network_ip_cond | network_port_cond)+ ")"
 
 file_rule: qualifiers ["owner"] file_rule_body
 file_rule_body: ("file" fileglob access | "file" access fileglob | fileglob access | access fileglob) ["->" exec_target]

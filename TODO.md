@@ -47,7 +47,7 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 
 - [ ] tieto rules su not done: HAT, Network, mount/unmount/remount, mqueue, io_uring, userns, pivot, ptrace, signal, dbus, unix, rlimit
 - [ ] tieto rules netransformujem do TOMOYO: abi_rule, profile flags/attachments, capability, change_profile, network_rule, all_rule, link_rule
-- [ ] tieto rules niesu ani saved do internal representation: change_profile, all_rule, capability, link_rule
+- [ ] tieto rules niesu ani saved do internal representation: all_rule, capability, link_rule
 - co este?
 
 ## po
@@ -70,3 +70,32 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 - 
 
 - [ ] SPRAV HATS and CHANGE PROFILES
+- [ ] SPRAV BASE POLICY
+
+## BEFORE 24.4.2025
+
+- man ls (test /usr/share/man** r)
+- man -C (/etc/manpath.config r)
+- taktiez mu dam nech citat z /etc abo takeho priecinka co by nemal mat pristup
+- however https://gitlab.com/apparmor/apparmor/-/blob/master/profiles/apparmor/profiles/extras/usr.bin.man (man policy Px to https://gitlab.com/apparmor/apparmor/-/blob/master/profiles/apparmor/profiles/extras/usr.lib.man-db.man) here is most of the permissions /usr/lib/man-db/man
+- budem musiet spravit ze ked tam je Px tak to len prida exception policy ze initialize_domain /usr/lib/man-db/man /usr/bin/man
+- a potom by mal moj kod hlasit ze treba aj ten druhy policy vytvorit ? idk maaaan
+- neviem vsak testovat jednotlive pravidla
+
+- spravim si db cmd prikazov ktore otestuju bezpecnostne politiky
+- tieto prikazy spustam cez python script, 3 rozne: apparmor, tomoyo converted, tomoyo learn-mode
+- mozme spustat v oboch enforcing aj complain resp v tomoyo enforce a permissive
+
+## Po
+
+- [ ] ak by aplikacia mala nejake svoje testy tak by to mohla vykonat vsetko
+- [ ] nejak by som pythonu nasadil ten profil nejak change hat or smh
+- [ ] mal by som zoznam suborov a pristupov vramci python scriptu budem otvarat na citanie, zapis... spustit nejaku inu appku z toho etc
+- [ ] tieto by som spustil z oboch a potom prirovnal k tomu co apparmor
+- [ ] file open() by mal pokryt vacsinu veci
+- [ ] mal by som otestovat kazde pravidlo co convertujem
+- [ ] nejaka statistika o testovani ze z logov viem zistit pravidla ktore boli testovane resp hitnute
+- viem ktore praavidla existuju ale nemam nejake dobre veci na testovanie
+- potom by som mal nejak spravit repozitar abo co kde by som dal tie logy a skripty k testovaniu a popis ako som to robil
+- popisat v praci aj slepe ulicky... comu sa vyhnut
+- nabuduce 30.4. v stredu a potom piatok 9.5.

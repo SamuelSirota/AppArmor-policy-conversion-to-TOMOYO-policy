@@ -10,5 +10,6 @@
   network inet tcp,
   network inet udp,
   network inet icmp,
+  network bind unix stream,
 
 }

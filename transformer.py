@@ -1,4 +1,5 @@
 from lark import Lark, Transformer
+from lark.lexer import Token
 import os, re, itertools
 
 
@@ -12,6 +13,38 @@ class FileRule:
         for i in self.permissions:
             string += f"file: {self.path} {i}\n"
         return string.strip()
+
+
+class LinkRule:
+    def __init__(self, source, target):
+        self.source = source
+        self.target = target
+
+    def __str__(self):
+        return f"file link {self.source} -> {self.target}"
+
+
+class NetworkRule:
+    def __init__(self, access, domain, socktype, local=None, peer=None):
+        self.access = access
+        self.domain = domain
+        self.socktype = socktype
+        self.local = local or {}
+        self.peer = peer or {}
+
+    def __str__(self):
+        parts = ["network"]
+        if self.access:
+            parts.append(",".join(self.access))
+        if self.domain:
+            parts.append(self.domain)
+        if self.socktype:
+            parts.append(self.socktype)
+        if self.local:
+            parts.append("local="+",".join(f"{k}={v}" for k,v in self.local.items()))
+        if self.peer:
+            parts.append("peer="+",".join(f"{k}={v}" for k,v in self.peer.items()))
+        return " ".join(parts)
 
 
 class ChangeProfileRule:
@@ -196,7 +229,43 @@ class AppArmorTransformer(Transformer):
         return "capability " + " ".join(str(i) for i in items if isinstance(i, str))
 
     def network_rule(self, items):
-        return "network " + " ".join(str(i) for i in items if isinstance(i, str))
+        access = []
+        domain = None
+        socktype = None
+        local = {}
+        peer  = {}
+
+        for tok in items:
+            if isinstance(tok, list) and all(isinstance(a, str) for a in tok):
+                access = tok
+            elif isinstance(tok, Token) and tok.type == "NETWORK_DOMAIN":
+                domain = tok.value
+            elif isinstance(tok, Token) and tok.type in ("NETWORK_TYPE", "PROTOCOL"):
+                socktype = tok.value
+            elif isinstance(tok, tuple) and tok[0] == "local":
+                _, key, val = tok
+                local[key] = val
+            elif isinstance(tok, list) and tok and isinstance(tok[0], tuple):
+                for _, key, val in tok:
+                    peer[key] = val
+        return NetworkRule(access, domain, socktype, local, peer)
+   
+    def network_ip_cond(self, items):
+        val = items[-1].value if isinstance(items[-1], Token) else items[-1]
+        return ("local", "ip", val)
+
+    def network_port_cond(self, items):
+        val = items[-1].value
+        return ("local", "port", val)
+
+    def network_peer_expr(self, items):
+        conds = [c for c in items if isinstance(c, tuple)]
+        return [("peer", key, val) for _, key, val in conds]
+
+    def link_rule(self, items):
+        source = str(items[1])
+        target = str(items[2])
+        return LinkRule(source, target)
 
     def change_profile_rule(self, items):
         mode = None
@@ -380,86 +449,105 @@ def translate_apparmor_pattern(pattern: str) -> list:
 
 def convert_to_tomoyo(policy: AppArmorPolicy):
     """
-    Convert AppArmor policy to TOMOYO format.
-    The conversion process:
-      - For each profile, iterate through its rules.
-      - For file rules, expand variables and apply aliases.
-      - Translate AppArmor glob patterns to TOMOYO-compatible patterns.
-      - Map AppArmor permissions to TOMOYO permissions.
-      - Handle change profile rules.
-      - Handle non-file rules by skipping them.
+    Convert AppArmor policy to TOMOYO format, but skip only when:
+      1) domain != "unix"
+      2) AND socktype not in {stream,dgram,seqpacket}
+      3) AND access ∩ {bind,listen,connect,send} is empty
+    Everything else (including unix-domain binds) is emitted.
     """
     apparmor_to_tomoyo = {
         "r": ["file read", "file getattr"],
         "w": [
-            "file write",
-            "file create",
-            "file unlink",
-            "file chown",
-            "file chgrp",
-            "file chmod",
-            "file mkdir",
-            "file rmdir",
-            "file truncate",
-            "file rename",
+            "file write", "file create", "file unlink", "file chown",
+            "file chgrp", "file chmod", "file mkdir", "file rmdir",
+            "file truncate", "file rename",
         ],
         "a": ["file append"],
-        "x": ["file execute"],
-        "ux": ["file execute"],
-        "Ux": ["file execute"],
-        "px": ["file execute"],
-        "Px": ["file execute"],
-        "cx": ["file execute"],
-        "Cx": ["file execute"],
-        "ix": ["file execute"],
-        "pix": ["file execute"],
-        "Pix": ["file execute"],
-        "cix": ["file execute"],
-        "Cix": ["file execute"],
-        "pux": ["file execute"],
-        "PUx": ["file execute"],
-        "cux": ["file execute"],
+        # all execute‐style perms map to “file execute”
+        "x": ["file execute"],  "ix": ["file execute"],  "ux": ["file execute"],
+        "Ux": ["file execute"], "px": ["file execute"],  "Px": ["file execute"],
+        "cx": ["file execute"], "Cx": ["file execute"],  "pix": ["file execute"],
+        "Pix": ["file execute"],"cix": ["file execute"], "Cix": ["file execute"],
+        "pux": ["file execute"],"PUx": ["file execute"], "cux": ["file execute"],
         "CUx": ["file execute"],
         "l": ["file link", "file symlink"],
     }
 
+    apparmor_net_to_tomoyo = {
+        "bind":    "bind",
+        "listen":  "listen",
+        "connect": "connect",
+        "accept":  "accept",
+        "send":    "send",
+        "receive": "receive",
+    }
+
     tomoyo_lines = []
+    valid_types = {"stream", "dgram", "seqpacket"}
+    valid_accs  = {"bind", "listen", "connect", "send"}
+
+    def fmt_addr(d):
+        ip   = d.get("ip", "NONE")
+        port = d.get("port")
+        return f"{ip}:{port}" if port else ip
 
     def process_profile(profile: AppArmorProfile):
-        profile_identifier = profile.identifier or "<unnamed>"
-        tomoyo_lines.append(f"TOMOYO profile: {profile_identifier}")
-
+        tomoyo_lines.append(f"TOMOYO profile: {profile.identifier or '<unnamed>'}")
         for rule in profile.rules:
             if isinstance(rule, FileRule):
-                expanded_paths = expand_variables(rule.path, policy.variables)
-                for expanded_path in expanded_paths:
-                    expanded_path = apply_aliases(expanded_path, policy.aliases)
-                    if any(c in expanded_path for c in "{[?*"):
-                        tomoyo_variants = translate_apparmor_pattern(expanded_path)
-                    else:
-                        tomoyo_variants = [expanded_path]
-                    for variant in tomoyo_variants:
-                        for perm in rule.permissions:
-                            if perm in apparmor_to_tomoyo:
-                                for tomoyo_perm in apparmor_to_tomoyo[perm]:
-                                    tomoyo_lines.append(f"{tomoyo_perm} {variant}")
-                            else:
-                                tomoyo_lines.append(
-                                    f"unknown permission: {perm} on {variant}"
-                                )
-            elif isinstance(rule, ChangeProfileRule):
-                paths = expand_variables(rule.path, policy.variables)
-                for p in paths:
-                    p_applied = apply_aliases(p, policy.aliases).replace(",", "")
-                    tomoyo_lines.append(
-                        f"domain change {profile_identifier} -> {p_applied}"
+                expanded = expand_variables(rule.path, policy.variables)
+                for path in expanded:
+                    path = apply_aliases(path, policy.aliases)
+                    variants = (
+                        translate_apparmor_pattern(path)
+                        if any(c in path for c in "{[?*}") else [path]
                     )
-            elif isinstance(rule, str):
-                tomoyo_lines.append(f"skip, nonfile rule: {rule}")
-        tomoyo_lines.append("")
+                    for v in variants:
+                        for perm in rule.permissions:
+                            for tom_perm in apparmor_to_tomoyo.get(perm, [f"unknown {perm}"]):
+                                tomoyo_lines.append(f"{tom_perm} {v}")
 
-    for profile in policy.profiles:
-        process_profile(profile)
+            elif isinstance(rule, LinkRule):
+                expanded_source = expand_variables(rule.source, policy.variables)
+                expanded_target = expand_variables(rule.target, policy.variables)
+                for source in expanded_source:
+                    source = apply_aliases(source, policy.aliases)
+                    source_variants = (
+                        translate_apparmor_pattern(source)
+                        if any(c in source for c in "{[?*}") else [source]
+                    )
+                    for s in source_variants:
+                        for target in expanded_target:
+                            target = apply_aliases(target, policy.aliases)
+                            target_variants = (
+                                translate_apparmor_pattern(target)
+                                if any(c in target for c in "{[?*}") else [target]
+                            )
+                            for t in target_variants:
+                                tomoyo_lines.append(f"file link {s} {t}")
+            
+            elif isinstance(rule, ChangeProfileRule):
+                for p in expand_variables(rule.path, policy.variables):
+                    p2 = apply_aliases(p, policy.aliases).replace(",", "")
+                    tomoyo_lines.append(f"domain change {profile.identifier} -> {p2}")
+
+            elif isinstance(rule, NetworkRule):
+                dom  = (rule.domain or "").lower()
+                st   = (rule.socktype or "").lower()
+                accs = set(rule.access or [])
+                if dom != "unix" and st not in valid_types and not (accs & valid_accs):
+                    continue
+                local_addr = fmt_addr(rule.local)
+                peers      = [rule.peer] if rule.peer else [None]
+
+                for acc in rule.access:
+                    tom_op = apparmor_net_to_tomoyo.get(acc, acc)
+                    for peer in peers:
+                        addr = fmt_addr(peer) if peer else local_addr
+                        tomoyo_lines.append(f"network {dom} {st} {tom_op} {addr}")
+        tomoyo_lines.append("")
+    for prof in policy.profiles:
+        process_profile(prof)
     return "\n".join(tomoyo_lines)
 
 
