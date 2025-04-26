@@ -463,7 +463,6 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
             "file truncate", "file rename",
         ],
         "a": ["file append"],
-        # all execute‐style perms map to “file execute”
         "x": ["file execute"],  "ix": ["file execute"],  "ux": ["file execute"],
         "Ux": ["file execute"], "px": ["file execute"],  "Px": ["file execute"],
         "cx": ["file execute"], "Cx": ["file execute"],  "pix": ["file execute"],
@@ -482,7 +481,17 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
         "receive": "receive",
     }
 
-    tomoyo_lines = []
+    domain_lines = []
+    exception_lines = []
+    exec_type_mapping = {
+        'p': 'initialize_domain',   # exec to profile, no scrub
+        'P': 'initialize_domain',   # exec to profile, with scrub
+        'c': 'initialize_domain',   # exec to child profile, no scrub
+        'C': 'initialize_domain',   # exec to child profile, with scrub
+        'u': 'reset_domain',        # exec unconfined, no scrub
+        'U': 'reset_domain',        # exec unconfined, with scrub
+        'i': 'keep_domain',         # inherit current confinement
+    }
     valid_types = {"stream", "dgram", "seqpacket"}
     valid_accs  = {"bind", "listen", "connect", "send"}
 
@@ -492,7 +501,7 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
         return f"{ip}:{port}" if port else ip
 
     def process_profile(profile: AppArmorProfile):
-        tomoyo_lines.append(f"TOMOYO profile: {profile.identifier or '<unnamed>'}")
+        domain_lines.append(f"TOMOYO profile: {profile.identifier or '<unnamed>'}")
         for rule in profile.rules:
             if isinstance(rule, FileRule):
                 expanded = expand_variables(rule.path, policy.variables)
@@ -504,8 +513,13 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                     )
                     for v in variants:
                         for perm in rule.permissions:
-                            for tom_perm in apparmor_to_tomoyo.get(perm, [f"unknown {perm}"]):
-                                tomoyo_lines.append(f"{tom_perm} {v}")
+                            if perm.endswith('x') and perm[0] in exec_type_mapping:
+                                mode = perm[0]
+                                tom_cmd = exec_type_mapping[mode]
+                                exception_lines.append(f"{tom_cmd} {v} from {profile.identifier}")
+                            else:
+                                for tom_perm in apparmor_to_tomoyo.get(perm, [f"unknown {perm}"]):
+                                    domain_lines.append(f"{tom_perm} {v}")
 
             elif isinstance(rule, LinkRule):
                 expanded_source = expand_variables(rule.source, policy.variables)
@@ -524,12 +538,12 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                                 if any(c in target for c in "{[?*}") else [target]
                             )
                             for t in target_variants:
-                                tomoyo_lines.append(f"file link {s} {t}")
+                                domain_lines.append(f"file link {s} {t}")
             
             elif isinstance(rule, ChangeProfileRule):
                 for p in expand_variables(rule.path, policy.variables):
                     p2 = apply_aliases(p, policy.aliases).replace(",", "")
-                    tomoyo_lines.append(f"domain change {profile.identifier} -> {p2}")
+                    domain_lines.append(f"domain change {profile.identifier} -> {p2}")
 
             elif isinstance(rule, NetworkRule):
                 dom  = (rule.domain or "").lower()
@@ -544,11 +558,11 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                     tom_op = apparmor_net_to_tomoyo.get(acc, acc)
                     for peer in peers:
                         addr = fmt_addr(peer) if peer else local_addr
-                        tomoyo_lines.append(f"network {dom} {st} {tom_op} {addr}")
-        tomoyo_lines.append("")
+                        domain_lines.append(f"network {dom} {st} {tom_op} {addr}")
+        domain_lines.append("")
     for prof in policy.profiles:
         process_profile(prof)
-    return "\n".join(tomoyo_lines)
+    return "\n".join(domain_lines), "\n".join(exception_lines)
 
 
 def preprocess_policy_file(
@@ -559,8 +573,8 @@ def preprocess_policy_file(
 ):
     """
     Preprocess an AppArmor policy file to handle includes and variable expansions.
-    This function reads the file, processes any #include directives, and returns
-    the preprocessed content as a string.
+    This function reads the file, processes any #include directives (including directories),
+    and returns the preprocessed content as a string.
     """
     if seen_files is None:
         seen_files = set()
@@ -581,40 +595,49 @@ def preprocess_policy_file(
                 is_conditional = "if exists" in line_strip
                 include_path = None
 
+                # Determine the include target
                 if "<" in line_strip and ">" in line_strip:
-                    start = line_strip.find("<") + 1
-                    end = line_strip.find(">")
-                    raw_path = line_strip[start:end]
+                    raw_path = line_strip.split("<", 1)[1].split(">", 1)[0]
                     include_path = os.path.join(base_policy_dir, raw_path)
                 elif '"' in line_strip:
-                    start = line_strip.find('"') + 1
-                    end = line_strip.rfind('"')
-                    raw_path = line_strip[start:end]
-                    if raw_path.startswith("/"):
-                        include_path = raw_path
-                    else:
-                        include_path = os.path.join(relative_include_dir, raw_path)
+                    raw_path = line_strip.split('"', 1)[1].rsplit('"', 1)[0]
+                    include_path = raw_path if os.path.isabs(raw_path) else os.path.join(relative_include_dir, raw_path)
                 else:
                     raise ValueError(f"Incorrect include directive: {line_strip}")
-                if include_path:
-                    if os.path.exists(include_path):
-                        print(f"Including file: {include_path}")
-                        included_text = preprocess_policy_file(
-                            include_path,
-                            seen_files,
-                            base_policy_dir,
-                            relative_include_dir,
-                        )
-                        result_lines.append(included_text)
+
+                # Handle directory includes
+                if include_path and os.path.isdir(include_path):
+                    print(f"Including directory: {include_path}")
+                    for entry in sorted(os.listdir(include_path)):
+                        entry_path = os.path.join(include_path, entry)
+                        if os.path.isfile(entry_path):
+                            # Recursively preprocess each file in the directory
+                            included_text = preprocess_policy_file(
+                                filepath=entry_path,
+                                seen_files=seen_files,
+                                base_policy_dir=base_policy_dir,
+                                relative_include_dir=relative_include_dir,
+                            )
+                            result_lines.append(included_text)
+                    continue  # Move to next line after processing directory
+
+                # Handle file includes
+                if include_path and os.path.exists(include_path):
+                    print(f"Including file: {include_path}")
+                    included_text = preprocess_policy_file(
+                        filepath=include_path,
+                        seen_files=seen_files,
+                        base_policy_dir=base_policy_dir,
+                        relative_include_dir=relative_include_dir,
+                    )
+                    result_lines.append(included_text)
+                else:
+                    if is_conditional:
+                        print(f"Optional include not found: {include_path} (skipping)")
                     else:
-                        if is_conditional:
-                            print(
-                                f"Optional include not found: {include_path} (skipping)"
-                            )
-                        else:
-                            raise FileNotFoundError(
-                                f"Required include file not found: {include_path}"
-                            )
+                        raise FileNotFoundError(
+                            f"Required include file not found: {include_path}"
+                        )
             else:
                 result_lines.append(line)
     return "".join(result_lines)
@@ -634,9 +657,10 @@ if __name__ == "__main__":
                 print("-------- Preprocessing --------")
                 preprocessed_text = preprocess_policy_file(
                     filepath=file_path,
-                    base_policy_dir=folder_path,
+                    base_policy_dir="/etc/apparmor.d",
                     relative_include_dir=folder_path,
                 )
+                print(preprocessed_text)
                 print("----------- Parsing -----------")
                 tree = parser.parse(preprocessed_text)
                 print(tree.pretty())
@@ -644,9 +668,11 @@ if __name__ == "__main__":
                 transformer = AppArmorTransformer()
                 result = transformer.transform(tree)
                 print(result)
-                print("\n-------- TOMOYO Policy --------")
-                tomoyo_output = convert_to_tomoyo(result)
-                print(tomoyo_output)
+                print("\n---- TOMOYO Domain Policy ----")
+                domain_lines, exception_lines  = convert_to_tomoyo(result)
+                print(domain_lines)
+                print("\n--- TOMOYO Exception Policy ---")
+                print(exception_lines)
             except Exception as e:
                 print("An exception occurred")
                 print(e)

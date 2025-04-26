@@ -45,9 +45,9 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 
 - [ ] abi 4.0 resp pozriet kompatibility asi viem spravit iba pre 1 verziu nie kazdu
 
-- [ ] tieto rules su not done: HAT, Network, mount/unmount/remount, mqueue, io_uring, userns, pivot, ptrace, signal, dbus, unix, rlimit
+- [ ] tieto rules su not done: HAT, mount/unmount/remount, mqueue, io_uring, userns, pivot, ptrace, signal, dbus, unix, rlimit
 - [ ] tieto rules netransformujem do TOMOYO: abi_rule, profile flags/attachments, capability, change_profile, network_rule, all_rule, link_rule
-- [ ] tieto rules niesu ani saved do internal representation: all_rule, capability, link_rule
+- [ ] tieto rules niesu ani saved do internal representation: all_rule, capability, network
 - co este?
 
 ## po
@@ -67,7 +67,6 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 - rovnake operacie na oboch aa aj tomoyo
 - spomenut, aj testy parsovania
 - docstringy pekne formatovat
-- 
 
 - [ ] SPRAV HATS and CHANGE PROFILES
 - [ ] SPRAV BASE POLICY
@@ -77,7 +76,7 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 - man ls (test /usr/share/man** r)
 - man -C (/etc/manpath.config r)
 - taktiez mu dam nech citat z /etc abo takeho priecinka co by nemal mat pristup
-- however https://gitlab.com/apparmor/apparmor/-/blob/master/profiles/apparmor/profiles/extras/usr.bin.man (man policy Px to https://gitlab.com/apparmor/apparmor/-/blob/master/profiles/apparmor/profiles/extras/usr.lib.man-db.man) here is most of the permissions /usr/lib/man-db/man
+- however <https://gitlab.com/apparmor/apparmor/-/blob/master/profiles/apparmor/profiles/extras/usr.bin.man> (man policy Px to <https://gitlab.com/apparmor/apparmor/-/blob/master/profiles/apparmor/profiles/extras/usr.lib.man-db.man>) here is most of the permissions /usr/lib/man-db/man
 - budem musiet spravit ze ked tam je Px tak to len prida exception policy ze initialize_domain /usr/lib/man-db/man /usr/bin/man
 - a potom by mal moj kod hlasit ze treba aj ten druhy policy vytvorit ? idk maaaan
 - neviem vsak testovat jednotlive pravidla
@@ -99,3 +98,10 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 - potom by som mal nejak spravit repozitar abo co kde by som dal tie logy a skripty k testovaniu a popis ako som to robil
 - popisat v praci aj slepe ulicky... comu sa vyhnut
 - nabuduce 30.4. v stredu a potom piatok 9.5.
+
+## pred 30.4.2025
+
+- [x] spravil som link, network teda nemam
+- [ ] pridat ze Px resp ostatne x pravidla co menia domeny pridat do exception policy tie zmeny domen
+- [ ] musim spravit ze mi to vyexportne jedno domain_policy a tie exception policy
+- [ ] tieto dve musim dajak pridat do tomoyo ale nechcem zmazat to co tam uz je
