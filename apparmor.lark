@@ -4,11 +4,13 @@
 
 _NEW_LINE: "\n"
 COMMENT: /#(?!(include)).*\r?\n/
+BRACE_EXPR.2: /\{[^\n]*\}/
 QUOTED_STRING: /"[^"]*"/
 MAGIC_PATH: /<[^" >][^>]*>/
 VARIABLE: /@\{[a-zA-Z][a-zA-Z0-9_]*\}/
 UNQUOTED_FILEGLOB: /\/[^ \t\n\r\f\v]+/
 UNQUOTED_VALUE: /[^ \t\n\r\f\v,]+/
+ABI_VALUE: /[^ \t\n\r\f\v,]+/
 UNQUOTED_PROFILE_NAME: /[a-zA-Z0-9][^ \t\n\r\f\v]*/
 CAPABILITY: /[a-z][a-z_]+/
 PROFILE_FLAG: "complain" | "kill" | "enforce" | "default_allow" | "unconfined" | "prompt" | "audit" | "mediate_deleted" | "attach_disconnected" | "chroot_relative" | "debug" | "interruptible"
@@ -22,6 +24,8 @@ PROTOCOL: "tcp" | "udp" | "icmp"
 NETWORK_IP: /(?:\d{1,3}\.){3}\d{1,3}/ | /(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}/
 NETWORK_PORT: /[0-9]{1,5}/
 
+path_expr: ( VARIABLE | BRACE_EXPR | UNQUOTED_FILEGLOB )+
+
 start: (_NEW_LINE |preamble_element | profile)* 
 
 _new_lines: _NEW_LINE*
@@ -29,15 +33,14 @@ _new_lines: _NEW_LINE*
 preamble_element: variable_assignment | alias_rule | include_rule | abi_rule 
 
 variable_assignment: VARIABLE ("=" | "+=") value+ "\n"
-value: QUOTED_STRING | UNQUOTED_VALUE
-
+value: QUOTED_STRING | UNQUOTED_VALUE | path_expr
 
 alias_rule: "alias" (QUOTED_STRING | UNQUOTED_VALUE) "->" (QUOTED_STRING | UNQUOTED_VALUE) "," _new_lines
 
 INCLUDE_DIRECTIVE: "#include"
 include_rule: INCLUDE_DIRECTIVE ["if exists"] (QUOTED_STRING | MAGIC_PATH) _new_lines
 
-abi_rule: "abi" (QUOTED_STRING | UNQUOTED_VALUE) "," _new_lines
+abi_rule: "abi" (QUOTED_STRING | ABI_VALUE) "," _new_lines
 
 profile: ["profile"] profile_name [attachment] [flags] _new_lines "{" _new_lines rules "}" _new_lines
 
@@ -47,17 +50,19 @@ flags: ["flags="] "(" flag_list ")"
 flag_list: PROFILE_FLAG ("," PROFILE_FLAG)*
 
 rules: (line_rule | comma_rule [","] _new_lines | block_rule)*
-
 line_rule: (COMMENT | include_rule | abi_rule) _new_lines
-
-comma_rule: file_rule | link_rule | capability_rule | network_rule | change_profile_rule | all_rule
+comma_rule: file_rule | link_rule | capability_rule | network_rule | change_profile_rule | all_rule | _catchall_rule | _unix_rule | _dbus_rule
+_IDK_WHAT: /[^\n]+,/
+_unix_rule: "unix" _IDK_WHAT _NEW_LINE
+_DBUS_REGEX: /([^,]+\{.+\}[^,]+),\n/
+_dbus_rule.2: "dbus" _DBUS_REGEX
+_catchall_rule: ("ptrace" | "signal" ) _IDK_WHAT _NEW_LINE
 
 capability_rule: qualifiers "capability" [capability_list]
 capability_list: CAPABILITY (CAPABILITY)*
 
-
+NETWORK_ACCESS_LIST: "(" NETWORK_ACCESS ("," NETWORK_ACCESS)* ")"
 network_rule: qualifiers? "network" [network_access_expr] [NETWORK_DOMAIN] [NETWORK_TYPE | PROTOCOL] [network_local_expr] [network_peer_expr] [","] _NEW_LINE
-NETWORK_ACCESS_LIST: "(" NETWORK_ACCESS ("," NETWORK_ACCESS )* ")"
 network_access_expr: NETWORK_ACCESS | NETWORK_ACCESS_LIST
 network_ip_cond: "ip" "=" ("none" | NETWORK_IP)
 network_port_cond: "port" "=" NETWORK_PORT
@@ -66,7 +71,7 @@ network_peer_expr: "peer" "=" "(" (network_ip_cond | network_port_cond)+ ")"
 
 file_rule: qualifiers ["owner"] file_rule_body
 file_rule_body: ("file" fileglob access | "file" access fileglob | fileglob access | access fileglob) ["->" exec_target]
-fileglob: ["/"] (UNQUOTED_FILEGLOB | VARIABLE) ( ["/"] UNQUOTED_FILEGLOB | VARIABLE)*
+fileglob: ["/"] (UNQUOTED_FILEGLOB | VARIABLE | BRACE_EXPR) ( ["/"] UNQUOTED_FILEGLOB | VARIABLE)*
 access: (SINGLE_ACCESS | MULTI_ACCESS)+ 
 exec_target: profile_name
 

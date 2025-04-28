@@ -72,10 +72,10 @@ class AppArmorProfile:
 
 class AppArmorPolicy:
     def __init__(self):
-        self.includes = []  # List of include paths
-        self.variables = {}  # Dictionary for variable assignments
-        self.aliases = {}  # Dictionary for alias rules
-        self.profiles = []  # List of AppArmorProfiles
+        self.includes = []
+        self.variables = {}
+        self.aliases = {}
+        self.profiles = []
 
     def __str__(self):
         lines = []
@@ -111,6 +111,10 @@ class AppArmorTransformer(Transformer):
         self.policy.variables[var_name].extend(values)
         return None
 
+    def path_expr(self, items):
+        return "".join(str(i) for i in items)
+
+
     def alias_rule(self, items):
         alias = str(items[0]).strip('"')
         target = str(items[1]).strip('"')
@@ -118,7 +122,7 @@ class AppArmorTransformer(Transformer):
         return f"alias {alias} -> {target}"
 
     def abi_rule(self, items):
-        return "abi " + str(items[0]).strip('"')
+        return
 
     def line_rule(self, items):
         if items and not (isinstance(items[0], str) and items[0].startswith("#")):
@@ -126,7 +130,9 @@ class AppArmorTransformer(Transformer):
         return None
 
     def comma_rule(self, items):
-        return items[0]
+        if items and items[0]:
+            return items[0]
+        return None
 
     def block_rule(self, items):
         return items[0]
@@ -226,7 +232,7 @@ class AppArmorTransformer(Transformer):
         return FileRule()
 
     def capability_rule(self, items):
-        return "capability " + " ".join(str(i) for i in items if isinstance(i, str))
+        return #"capability " + " ".join(str(i) for i in items if isinstance(i, str))
 
     def network_rule(self, items):
         access = []
@@ -306,21 +312,36 @@ def expand_variables(path, variables):
     If a variable is not found, it will be replaced with an empty string.
     """
     pattern = re.compile(r"@{([^}]+)}")
-    matches = pattern.findall(path)
-    if not matches:
-        return [path]
-    value_lists = []
-    for var in matches:
-        values = variables.get(f"@{{{var}}}", [])
-        value_lists.append(values)
-    expanded_paths = []
-    for combo in itertools.product(*value_lists):
-        expanded = path
-        for var, val in zip(matches, combo):
-            expanded = expanded.replace(f"@{{{var}}}", val)
-        expanded = re.sub(r"/{2,}", "/", expanded)
-        expanded_paths.append(expanded)
-    return expanded_paths
+    paths = [path]
+    while True:
+        new_paths = []
+        expanded = False
+        for p in paths:
+            matches = pattern.findall(p)
+            if not matches:
+                new_paths.append(p)
+                continue
+
+            value_lists = []
+            for var in matches:
+                values = variables.get(f"@{{{var}}}", [])
+                if isinstance(values, str):
+                    values = values.split()
+                value_lists.append(values)
+
+            for combo in itertools.product(*value_lists):
+                expanded_p = p
+                for var, val in zip(matches, combo):
+                    expanded_p = expanded_p.replace(f"@{{{var}}}", val)
+                expanded_p = re.sub(r"/{2,}", "/", expanded_p)
+                new_paths.append(expanded_p)
+                expanded = True
+
+        paths = new_paths
+        if not expanded:
+            break
+
+    return paths
 
 
 def apply_aliases(path, aliases):
@@ -484,13 +505,13 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
     domain_lines = []
     exception_lines = []
     exec_type_mapping = {
-        'p': 'initialize_domain',   # exec to profile, no scrub
-        'P': 'initialize_domain',   # exec to profile, with scrub
-        'c': 'initialize_domain',   # exec to child profile, no scrub
-        'C': 'initialize_domain',   # exec to child profile, with scrub
-        'u': 'reset_domain',        # exec unconfined, no scrub
-        'U': 'reset_domain',        # exec unconfined, with scrub
-        'i': 'keep_domain',         # inherit current confinement
+        'p': 'initialize_domain',
+        'P': 'initialize_domain',
+        'c': 'initialize_domain',
+        'C': 'initialize_domain',
+        'u': 'reset_domain',
+        'U': 'reset_domain',
+        'i': 'keep_domain',
     }
     valid_types = {"stream", "dgram", "seqpacket"}
     valid_accs  = {"bind", "listen", "connect", "send"}
@@ -504,22 +525,25 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
         domain_lines.append(f"TOMOYO profile: {profile.identifier or '<unnamed>'}")
         for rule in profile.rules:
             if isinstance(rule, FileRule):
-                expanded = expand_variables(rule.path, policy.variables)
-                for path in expanded:
-                    path = apply_aliases(path, policy.aliases)
-                    variants = (
-                        translate_apparmor_pattern(path)
-                        if any(c in path for c in "{[?*}") else [path]
-                    )
-                    for v in variants:
-                        for perm in rule.permissions:
-                            if perm.endswith('x') and perm[0] in exec_type_mapping:
-                                mode = perm[0]
-                                tom_cmd = exec_type_mapping[mode]
-                                exception_lines.append(f"{tom_cmd} {v} from {profile.identifier}")
-                            else:
-                                for tom_perm in apparmor_to_tomoyo.get(perm, [f"unknown {perm}"]):
-                                    domain_lines.append(f"{tom_perm} {v}")
+                if "pid" in rule.path:#i dont like this buuuut it helps
+                    continue
+                else:
+                    expanded = expand_variables(rule.path, policy.variables)
+                    for path in expanded:
+                        path = apply_aliases(path, policy.aliases)
+                        variants = (
+                            translate_apparmor_pattern(path)
+                            if any(c in path for c in "{[?*}") else [path]
+                        )
+                        for v in variants:
+                            for perm in rule.permissions:
+                                if perm.endswith('x') and perm[0] in exec_type_mapping:
+                                    mode = perm[0]
+                                    tom_cmd = exec_type_mapping[mode]
+                                    exception_lines.append(f"{tom_cmd} {v} from {profile.identifier}")
+                                else:
+                                    for tom_perm in apparmor_to_tomoyo.get(perm, [f""]):
+                                        domain_lines.append(f"{tom_perm} {v}")
 
             elif isinstance(rule, LinkRule):
                 expanded_source = expand_variables(rule.source, policy.variables)
@@ -595,7 +619,6 @@ def preprocess_policy_file(
                 is_conditional = "if exists" in line_strip
                 include_path = None
 
-                # Determine the include target
                 if "<" in line_strip and ">" in line_strip:
                     raw_path = line_strip.split("<", 1)[1].split(">", 1)[0]
                     include_path = os.path.join(base_policy_dir, raw_path)
@@ -605,13 +628,11 @@ def preprocess_policy_file(
                 else:
                     raise ValueError(f"Incorrect include directive: {line_strip}")
 
-                # Handle directory includes
                 if include_path and os.path.isdir(include_path):
                     print(f"Including directory: {include_path}")
                     for entry in sorted(os.listdir(include_path)):
                         entry_path = os.path.join(include_path, entry)
                         if os.path.isfile(entry_path):
-                            # Recursively preprocess each file in the directory
                             included_text = preprocess_policy_file(
                                 filepath=entry_path,
                                 seen_files=seen_files,
@@ -619,9 +640,8 @@ def preprocess_policy_file(
                                 relative_include_dir=relative_include_dir,
                             )
                             result_lines.append(included_text)
-                    continue  # Move to next line after processing directory
-
-                # Handle file includes
+                    continue
+                
                 if include_path and os.path.exists(include_path):
                     print(f"Including file: {include_path}")
                     included_text = preprocess_policy_file(

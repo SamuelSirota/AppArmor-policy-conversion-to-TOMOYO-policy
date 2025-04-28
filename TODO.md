@@ -45,7 +45,7 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 
 - [ ] abi 4.0 resp pozriet kompatibility asi viem spravit iba pre 1 verziu nie kazdu
 
-- [ ] tieto rules su not done: HAT, mount/unmount/remount, mqueue, io_uring, userns, pivot, ptrace, signal, dbus, unix, rlimit
+- [ ] tieto rules su not in grammar: HAT, mount/unmount/remount, mqueue, io_uring, userns, pivot, ptrace, signal, dbus, unix, rlimit
 - [ ] tieto rules netransformujem do TOMOYO: abi_rule, profile flags/attachments, capability, change_profile, network_rule, all_rule, link_rule
 - [ ] tieto rules niesu ani saved do internal representation: all_rule, capability, network
 - co este?
@@ -102,6 +102,6 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 ## pred 30.4.2025
 
 - [x] spravil som link, network teda nemam
-- [ ] pridat ze Px resp ostatne x pravidla co menia domeny pridat do exception policy tie zmeny domen
-- [ ] musim spravit ze mi to vyexportne jedno domain_policy a tie exception policy
+- [x] pridat ze Px resp ostatne x pravidla co menia domeny pridat do exception policy tie zmeny domen
+- [x] musim spravit ze mi to vyexportne jedno domain_policy a tie exception policy
 - [ ] tieto dve musim dajak pridat do tomoyo ale nechcem zmazat to co tam uz je
