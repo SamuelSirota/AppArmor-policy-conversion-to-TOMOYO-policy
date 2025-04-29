@@ -522,7 +522,8 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
         return f"{ip}:{port}" if port else ip
 
     def process_profile(profile: AppArmorProfile):
-        domain_lines.append(f"TOMOYO profile: {profile.identifier or '<unnamed>'}")
+        domain_lines.append(f"<kernel> {profile.identifier}\nuse_profile 0\nuse_group 0\n")
+        exception_lines.append(f"initialize_domain {profile.identifier} from any")
         for rule in profile.rules:
             if isinstance(rule, FileRule):
                 if "pid" in rule.path:#i dont like this buuuut it helps
@@ -542,8 +543,9 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                                     tom_cmd = exec_type_mapping[mode]
                                     exception_lines.append(f"{tom_cmd} {v} from {profile.identifier}")
                                 else:
-                                    for tom_perm in apparmor_to_tomoyo.get(perm, [f""]):
-                                        domain_lines.append(f"{tom_perm} {v}")
+                                    if perm in apparmor_to_tomoyo:
+                                        for tom_perm in apparmor_to_tomoyo[perm]:
+                                            domain_lines.append(f"{tom_perm} {v}")
 
             elif isinstance(rule, LinkRule):
                 expanded_source = expand_variables(rule.source, policy.variables)
@@ -567,7 +569,7 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
             elif isinstance(rule, ChangeProfileRule):
                 for p in expand_variables(rule.path, policy.variables):
                     p2 = apply_aliases(p, policy.aliases).replace(",", "")
-                    domain_lines.append(f"domain change {profile.identifier} -> {p2}")
+                    exception_lines.append(f"{exec_type_mapping['c']} {p2} from {profile.identifier}")
 
             elif isinstance(rule, NetworkRule):
                 dom  = (rule.domain or "").lower()
@@ -667,7 +669,7 @@ if __name__ == "__main__":
     with open("apparmor.lark", "r") as f:
         grammar = f.read()
     parser = Lark(grammar, start="start", parser="lalr")
-    folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/passes/"
+    folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/fails/"
 
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)

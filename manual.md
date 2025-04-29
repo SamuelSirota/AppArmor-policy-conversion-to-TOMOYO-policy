@@ -92,15 +92,15 @@ RULE | ALL RULE)
 
 -[x] CAPABILITY = (lowercase capability name without 'CAP_' prefix; see capabilities(7))
 
--[ ] NETWORK RULE = [ QUALIFIERS ] 'network' [ NETWORK ACCESS EXPR ] [ DOMAIN ] [ TYPE | PROTOCOL ] [ NETWORK LOCAL EXPR ] [ NETWORK PEER EXPR ]
+-[x] NETWORK RULE = [ QUALIFIERS ] 'network' [ NETWORK ACCESS EXPR ] [ DOMAIN ] [ TYPE | PROTOCOL ] [ NETWORK LOCAL EXPR ] [ NETWORK PEER EXPR ]
 
--[ ] NETWORK ACCESS EXPR = ( NETWORK ACCESS | NETWORK ACCESS LIST )
+-[x] NETWORK ACCESS EXPR = ( NETWORK ACCESS | NETWORK ACCESS LIST )
 
--[ ] NETWORK ACCESS = ( 'create' | 'bind' | 'listen' | 'accept' | 'connect' | 'shutdown' | 'getattr' |
+-[x] NETWORK ACCESS = ( 'create' | 'bind' | 'listen' | 'accept' | 'connect' | 'shutdown' | 'getattr' |
 'setattr' | 'getopt' | 'setopt' | 'send' | 'receive' | 'r' | 'w' | 'rw' )
     Some access modes are incompatible with some rules.
 
--[ ] NETWORK ACCESS LIST = '(' NETWORK ACCESS ( [','] NETWORK ACCESS )* ')'
+-[x] NETWORK ACCESS LIST = '(' NETWORK ACCESS ( [','] NETWORK ACCESS )* ')'
 
 -[x] DOMAIN = ( 'unix' | 'inet' | 'ax25' | 'ipx' | 'appletalk' | 'netrom' | 'bridge' | 'atmpvc' | 'x25' |
 'inet6' | 'rose' | 'netbeui' | 'security' | 'key' | 'netlink' | 'packet' | 'ash' | 'econet' |
@@ -112,22 +112,22 @@ RULE | ALL RULE)
 
 -[x] PROTOCOL = ( 'tcp' | 'udp' | 'icmp' )
 
--[ ] NETWORK LOCAL EXPR = ( NETWORK IP COND | NETWORK PORT COND )*
+-[x] NETWORK LOCAL EXPR = ( NETWORK IP COND | NETWORK PORT COND )*
     Each cond can appear at most once.
 
--[ ] NETWORK PEER EXPR = 'peer' '=' '(' ( NETWORK IP COND | NETWORK PORT COND )+ ')'
+-[x] NETWORK PEER EXPR = 'peer' '=' '(' ( NETWORK IP COND | NETWORK PORT COND )+ ')'
     Each cond can appear at most once.
 
--[ ] NETWORK IP COND = 'ip' '=' ( 'none' | NETWORK IPV4 | NETWORK IPV6 )
+-[x] NETWORK IP COND = 'ip' '=' ( 'none' | NETWORK IPV4 | NETWORK IPV6 )
 
--[ ] NETWORK PORT COND = 'port' '=' ( NETWORK PORT )
+-[x] NETWORK PORT COND = 'port' '=' ( NETWORK PORT )
 
--[ ] NETWORK IPV4 = IPv4, represented by four 8-bit decimal numbers separated by '.'
+-[x] NETWORK IPV4 = IPv4, represented by four 8-bit decimal numbers separated by '.'
 
--[ ] NETWORK IPV6 = IPv6, represented by eight groups of four hexadecimal numbers separated by ':'.
+-[x] NETWORK IPV6 = IPv6, represented by eight groups of four hexadecimal numbers separated by ':'.
 Shortened representation of contiguous zeros is allowed by using '::'
 
--[ ] NETWORK PORT = 16-bit number ranging from 0 to 65535
+-[x] NETWORK PORT = 16-bit number ranging from 0 to 65535
 
 -[ ] MOUNT RULE = ( MOUNT | REMOUNT | UMOUNT )
 
@@ -193,98 +193,98 @@ debugfs, devfs, etc)
 
 -[ ] OLD PUT FILEGLOB = FILEGLOB
 
--[ ] PTRACE_RULE = [ QUALIFIERS ] 'ptrace' [ PTRACE ACCESS PERMISSIONS ] [ PTRACE PEER ]
+-[x] PTRACE_RULE = [ QUALIFIERS ] 'ptrace' [ PTRACE ACCESS PERMISSIONS ] [ PTRACE PEER ]
 
--[ ] PTRACE ACCESS PERMISSIONS = PTRACE ACCESS | PTRACE ACCESS LIST
+-[x] PTRACE ACCESS PERMISSIONS = PTRACE ACCESS | PTRACE ACCESS LIST
 
--[ ] PTRACE ACCESS LIST = '(' Comma or space separated list of PTRACE ACCESS ')'
+-[x] PTRACE ACCESS LIST = '(' Comma or space separated list of PTRACE ACCESS ')'
 
--[ ] PTRACE ACCESS = ( 'r' | 'w' | 'rw' | 'read' | 'readby' | 'trace' | 'tracedby' )
+-[x] PTRACE ACCESS = ( 'r' | 'w' | 'rw' | 'read' | 'readby' | 'trace' | 'tracedby' )
 
--[ ] PTRACE PEER = 'peer' '=' AARE
+-[x] PTRACE PEER = 'peer' '=' AARE
 
--[ ] SIGNAL_RULE = [ QUALIFIERS ] 'signal' [ SIGNAL ACCESS PERMISSIONS ] [ SIGNAL SET ] [ SIGNAL PEER ]
+-[x] SIGNAL_RULE = [ QUALIFIERS ] 'signal' [ SIGNAL ACCESS PERMISSIONS ] [ SIGNAL SET ] [ SIGNAL PEER ]
 
--[ ] SIGNAL ACCESS PERMISSIONS = SIGNAL ACCESS | SIGNAL ACCESS LIST
+-[x] SIGNAL ACCESS PERMISSIONS = SIGNAL ACCESS | SIGNAL ACCESS LIST
 
--[ ] SIGNAL ACCESS LIST = '(' Comma or space separated list of SIGNAL ACCESS ')'
+-[x] SIGNAL ACCESS LIST = '(' Comma or space separated list of SIGNAL ACCESS ')'
 
--[ ] SIGNAL ACCESS = ( 'r' | 'w' | 'rw' | 'read' | 'write' | 'send' | 'receive' )
+-[x] SIGNAL ACCESS = ( 'r' | 'w' | 'rw' | 'read' | 'write' | 'send' | 'receive' )
 
--[ ] SIGNAL SET = 'set' '=' '(' SIGNAL LIST ')'
+-[x] SIGNAL SET = 'set' '=' '(' SIGNAL LIST ')'
 
--[ ] SIGNAL LIST = Comma or space separated list of SIGNALs
+-[x] SIGNAL LIST = Comma or space separated list of SIGNALs
 
--[ ] SIGNAL = ( 'hup' | 'int' | 'quit' | 'ill' | 'trap' | 'abrt' | 'bus' | 'fpe' | 'kill' | 'usr1' |
+-[x] SIGNAL = ( 'hup' | 'int' | 'quit' | 'ill' | 'trap' | 'abrt' | 'bus' | 'fpe' | 'kill' | 'usr1' |
 'segv' | 'usr2' | 'pipe' | 'alrm' | 'term' | 'stkflt' | 'chld' | 'cont' | 'stop' | 'stp' | 'ttin' |
 'ttou' | 'urg' | 'xcpu' | 'xfsz' | 'vtalrm' | 'prof' | 'winch' | 'io' | 'pwr' | 'sys' | 'emt' |
 'exists' | 'rtmin+0' ... 'rtmin+32' )
 
--[ ] SIGNAL PEER = 'peer' '=' AARE
+-[x] SIGNAL PEER = 'peer' '=' AARE
 
--[ ] DBUS RULE = ( DBUS MESSAGE RULE | DBUS SERVICE RULE | DBUS EAVESDROP RULE | DBUS COMBINED RULE )
+-[x] DBUS RULE = ( DBUS MESSAGE RULE | DBUS SERVICE RULE | DBUS EAVESDROP RULE | DBUS COMBINED RULE )
 
--[ ] DBUS MESSAGE RULE = [ QUALIFIERS ] 'dbus' [ DBUS ACCESS EXPRESSION ] [ DBUS BUS ] [ DBUS PATH ] [
-DBUS INTERFACE ] [ DBUS MEMBER ] [ DBUS PEER ]
+-[x] DBUS MESSAGE RULE = [ QUALIFIERS ] 'dbus' [ DBUS ACCESS EXPRESSION ] [ DBUS BUS ] [ DBUS PATH ] [
+DBU INTERFACE ] [ DBUS MEMBER ] [ DBUS PEER ]
 
--[ ] DBUS SERVICE RULE = [ QUALIFIERS ] 'dbus' [ DBUS ACCESS EXPRESSION ] [ DBUS BUS ] [ DBUS NAME ]
+-[x] DBUS SERVICE RULE = [ QUALIFIERS ] 'dbus' [ DBUS ACCESS EXPRESSION ] [ DBUS BUS ] [ DBUS NAME ]
 
--[ ] DBUS EAVESDROP RULE = [ QUALIFIERS ] 'dbus' [ DBUS ACCESS EXPRESSION ] [ DBUS BUS ]
+-[x] DBUS EAVESDROP RULE = [ QUALIFIERS ] 'dbus' [ DBUS ACCESS EXPRESSION ] [ DBUS BUS ]
 
--[ ] DBUS COMBINED RULE = [ QUALIFIERS ] 'dbus' [ DBUS ACCESS EXPRESSION ] [ DBUS BUS ]
+-[x] DBUS COMBINED RULE = [ QUALIFIERS ] 'dbus' [ DBUS ACCESS EXPRESSION ] [ DBUS BUS ]
 
--[ ] DBUS ACCESS EXPRESSION = ( DBUS ACCESS | '(' DBUS ACCESS LIST ')' )
+-[x] DBUS ACCESS EXPRESSION = ( DBUS ACCESS | '(' DBUS ACCESS LIST ')' )
 
--[ ] DBUS BUS = 'bus' '=' '(' 'system' | 'session' | '"' AARE '"' | AARE ')'
+-[x] DBUS BUS = 'bus' '=' '(' 'system' | 'session' | '"' AARE '"' | AARE ')'
 
--[ ] DBUS PATH = 'path' '=' '(' '"' AARE '"' | AARE ')'
+-[x] DBUS PATH = 'path' '=' '(' '"' AARE '"' | AARE ')'
 
--[ ] DBUS INTERFACE = 'interface' '=' '(' '"' AARE '"' | AARE ')'
+-[x] DBUS INTERFACE = 'interface' '=' '(' '"' AARE '"' | AARE ')'
 
--[ ] DBUS MEMBER = 'member' '=' '(' '"' AARE '"' | AARE ')'
+-[x] DBUS MEMBER = 'member' '=' '(' '"' AARE '"' | AARE ')'
 
--[ ] DBUS PEER = 'peer' '=' '(' [ DBUS NAME ] [ DBUS LABEL ] ')'
+-[x] DBUS PEER = 'peer' '=' '(' [ DBUS NAME ] [ DBUS LABEL ] ')'
 
--[ ] DBUS NAME = 'name' '=' '(' '"' AARE '"' | AARE ')'
+-[x] DBUS NAME = 'name' '=' '(' '"' AARE '"' | AARE ')'
 
--[ ] DBUS LABEL = 'label' '=' '(' '"' AARE '"' | AARE ')'
+-[x] DBUS LABEL = 'label' '=' '(' '"' AARE '"' | AARE ')'
 
--[ ] DBUS ACCESS LIST = Comma separated list of DBUS ACCESS
+-[x] DBUS ACCESS LIST = Comma separated list of DBUS ACCESS
 
--[ ] DBUS ACCESS = ( 'send' | 'receive' | 'bind' | 'eavesdrop' | 'r' | 'read' | 'w' | 'write' | 'rw' )
+-[x] DBUS ACCESS = ( 'send' | 'receive' | 'bind' | 'eavesdrop' | 'r' | 'read' | 'w' | 'write' | 'rw' )
     Some accesses are incompatible with some rules; see below.
 
--[ ] UNIX RULE = [ QUALIFIERS ] 'unix' [ UNIX ACCESS EXPR ] [ UNIX RULE CONDS ] [ UNIX LOCAL EXPR ] [ UNIX
+-[x] UNIX RULE = [ QUALIFIERS ] 'unix' [ UNIX ACCESS EXPR ] [ UNIX RULE CONDS ] [ UNIX LOCAL EXPR ] [ UNIX
 PEER EXPR ]
 
--[ ] UNIX ACCESS EXPR = ( UNIX ACCESS | UNIX ACCESS LIST )
+-[x] UNIX ACCESS EXPR = ( UNIX ACCESS | UNIX ACCESS LIST )
 
--[ ] UNIX ACCESS = ( 'create' | 'bind' | 'listen' | 'accept' | 'connect' | 'shutdown' | 'getattr' |
+-[x] UNIX ACCESS = ( 'create' | 'bind' | 'listen' | 'accept' | 'connect' | 'shutdown' | 'getattr' |
 'setattr' | 'getopt' | 'setopt' | 'send' | 'receive' | 'r' | 'w' | 'rw' )
     Some access modes are incompatible with some rules or require additional parameters.
 
--[ ] UNIX ACCESS LIST = '(' UNIX ACCESS ( [','] UNIX ACCESS )* ')'
+-[x] UNIX ACCESS LIST = '(' UNIX ACCESS ( [','] UNIX ACCESS )* ')'
 
--[ ] UNIX RULE CONDS = ( TYPE COND | PROTO COND )
+-[x] UNIX RULE CONDS = ( TYPE COND | PROTO COND )
     Each cond can appear at most once.
 
--[ ] TYPE COND = 'type' '='  ( AARE | '(' ( '"' AARE '"' | AARE )+ ')' )
+-[x] TYPE COND = 'type' '='  ( AARE | '(' ( '"' AARE '"' | AARE )+ ')' )
 
--[ ] PROTO COND = 'protocol' '='  ( AARE | '(' ( '"' AARE '"' | AARE )+ ')' )
+-[x] PROTO COND = 'protocol' '='  ( AARE | '(' ( '"' AARE '"' | AARE )+ ')' )
 
--[ ] UNIX LOCAL EXPR = ( UNIX ADDRESS COND | UNIX LABEL COND | UNIX ATTR COND | UNIX OPT COND )*
+-[x] UNIX LOCAL EXPR = ( UNIX ADDRESS COND | UNIX LABEL COND | UNIX ATTR COND | UNIX OPT COND )*
     Each cond can appear at most once.
 
--[ ] UNIX PEER EXPR = 'peer' '=' ( UNIX ADDRESS COND | UNIX LABEL COND )+
+-[x] UNIX PEER EXPR = 'peer' '=' ( UNIX ADDRESS COND | UNIX LABEL COND )+
     Each cond can appear at most once.
 
--[ ] UNIX ADDRESS COND 'addr' '=' ( AARE | '(' '"' AARE '"' | AARE ')' )
+-[x] UNIX ADDRESS COND 'addr' '=' ( AARE | '(' '"' AARE '"' | AARE ')' )
 
--[ ] UNIX LABEL COND 'label' '=' ( AARE | '(' '"' AARE '"' | AARE ')' )
+-[x] UNIX LABEL COND 'label' '=' ( AARE | '(' '"' AARE '"' | AARE ')' )
 
--[ ] UNIX ATTR COND 'attr' '=' ( AARE | '(' '"' AARE '"' | AARE ')' )
+-[x] UNIX ATTR COND 'attr' '=' ( AARE | '(' '"' AARE '"' | AARE ')' )
 
--[ ] UNIX OPT COND 'opt' '=' ( AARE | '(' '"' AARE '"' | AARE ')' )
+-[x] UNIX OPT COND 'opt' '=' ( AARE | '(' '"' AARE '"' | AARE ')' )
 
 -[ ] RLIMIT RULE = 'set' 'rlimit' [RLIMIT '<=' RLIMIT VALUE ]
 

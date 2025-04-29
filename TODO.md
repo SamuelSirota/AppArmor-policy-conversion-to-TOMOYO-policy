@@ -43,11 +43,11 @@
 
 FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvertujem ho do tomoyo a potom ho skusim spustit v tomoyo..
 
-- [ ] abi 4.0 resp pozriet kompatibility asi viem spravit iba pre 1 verziu nie kazdu
+- [x] abi 4.0 resp pozriet kompatibility asi viem spravit iba pre 1 verziu nie kazdu
 
-- [ ] tieto rules su not in grammar: HAT, mount/unmount/remount, mqueue, io_uring, userns, pivot, ptrace, signal, dbus, unix, rlimit
-- [ ] tieto rules netransformujem do TOMOYO: abi_rule, profile flags/attachments, capability, change_profile, network_rule, all_rule, link_rule
-- [ ] tieto rules niesu ani saved do internal representation: all_rule, capability, network
+- [ ] tieto rules su not in grammar: HAT, mount/unmount/remount, mqueue, io_uring, userns, pivot, rlimit
+- [ ] tieto rules netransformujem do TOMOYO: abi_rule, profile flags/attachments, capability, network_rule, all_rule, link_rule
+- [ ] tieto rules niesu ani saved do internal representation: all_rule, capability, network, ptrace, signal, dbus, unix
 - co este?
 
 ## po
@@ -105,3 +105,13 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 - [x] pridat ze Px resp ostatne x pravidla co menia domeny pridat do exception policy tie zmeny domen
 - [x] musim spravit ze mi to vyexportne jedno domain_policy a tie exception policy
 - [ ] tieto dve musim dajak pridat do tomoyo ale nechcem zmazat to co tam uz je
+
+- testing
+  - save existing policy
+  - load new policy
+  - run the test
+    - test prida vyvori novy aa/tomoyo policy, ktory vlastne bude ukazovat na sameho seba (podprogram) a spravi aby ten profil zmenil domenu/profil na profile ktory chcem testovat
+    - code itself asi podprogram ukazuje napr na usr.bin.man, teraz je podprogram vlastne confined a mozeme ho spustit
+      - podprogram moze iterovat vlastne cez domain.conf rules a bude pomocou open() testovat r/w opravnenia
+      - okrem toho by sme tam pridali aj rules ktore by nemali byt povolene
+      - vystupom je dlhy zoznam ci pravidlo je povolene alebo nie (z domain.conf rules zistime True positive a False positive, z tych co tam nemaju byt True negative a False negative)

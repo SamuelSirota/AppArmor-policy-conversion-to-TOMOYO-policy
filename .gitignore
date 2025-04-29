@@ -1,3 +1,5 @@
 eee/
 eee.zip
 .vscode/
+__pycache__/
+exports/
