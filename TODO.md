@@ -115,3 +115,10 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
       - podprogram moze iterovat vlastne cez domain.conf rules a bude pomocou open() testovat r/w opravnenia
       - okrem toho by sme tam pridali aj rules ktore by nemali byt povolene
       - vystupom je dlhy zoznam ci pravidlo je povolene alebo nie (z domain.conf rules zistime True positive a False positive, z tych co tam nemaju byt True negative a False negative)
+
+## po
+
+- keby som spravil komplement k true positive tak to bude zbytocne nafuknute
+- ze nejake pribuzne subory abo co 
+- sensitivita, recall, precision, statistika, fscore2 (confusion matrix wiki)
+- 

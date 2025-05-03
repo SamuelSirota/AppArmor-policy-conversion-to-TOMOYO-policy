@@ -42,8 +42,12 @@ def main():
         print(domain_lines)
         print("\n--- TOMOYO Exception Policy ---")
         print(exception_lines)
+        print("\n--- Writing to files ---")
+        with open("envs", "r") as f:
+            envs = f.read()
         with open(domain_file, "w") as f:
             f.write(domain_lines)
+            f.write(envs)
         with open(exception_file, "w") as f:
             f.write(exception_lines)
         print(f"Domain policy written to {domain_file}")

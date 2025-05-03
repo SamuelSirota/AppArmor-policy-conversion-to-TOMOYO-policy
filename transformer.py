@@ -1,4 +1,4 @@
-from lark import Lark, Transformer
+from lark import Lark, Transformer, Tree
 from lark.lexer import Token
 import os, re, itertools
 
@@ -105,11 +105,14 @@ class AppArmorTransformer(Transformer):
 
     def variable_assignment(self, items):
         var_name = str(items[0])
-        values = [str(v).strip('"') for v in items[1:]]
-        if var_name not in self.policy.variables:
-            self.policy.variables[var_name] = []
-        self.policy.variables[var_name].extend(values)
+        raw_rhs  = str(items[1]).strip()
+        # split on any runs of whitespace:
+        values = raw_rhs.split()
+
+        # store or extend exactly those substrings:
+        self.policy.variables.setdefault(var_name, []).extend(values)
         return None
+
 
     def path_expr(self, items):
         return "".join(str(i) for i in items)
@@ -431,17 +434,10 @@ def escape_for_tomoyo(text: str) -> str:
 
 
 def translate_apparmor_pattern(pattern: str) -> list:
-    r"""
+    """
     Translate an AppArmor glob pattern into one or more TOMOYO-compatible patterns.
-
-    The translation process:
-      - Expands brace expressions ({}).
-      - Expands bracket expressions (e.g. [abc] or [a-c]) into literal alternatives.
-      - Replaces the recursive wildcard ** with TOMOYO's recursive directory operator "/\{dir\}/".
-      - Processes negative glob constructs (e.g. {*^shadow} or {**^shadow,passwd}) by removing the caret
-        and inserting TOMOYO subtraction operator (here rendered as "\-").
-      - Escapes standard wildcards (* and ?), so they become "\*" and "\?".
-      - Removes duplicate slashes (except at the beginning).
+    Enhancements:
+      - For `**`, produce both "/\{dir\}/" and "\*" to include current and subdirectories.
     """
     alternatives = expand_brace_expressions(pattern)
     temp = []
@@ -454,17 +450,33 @@ def translate_apparmor_pattern(pattern: str) -> list:
 
     results = []
     for alt in alternatives:
+        sub_patterns = []
+
         if "^" in alt:
             alt = alt.replace("**^", r"/\{dir\}/\-")
-            alt = re.sub(
-                r"(\*)(\^)", lambda m: escape_for_tomoyo(m.group(1)) + r"\-", alt
-            )
+            alt = re.sub(r"(\*)(\^)", lambda m: escape_for_tomoyo(m.group(1)) + r"\-", alt)
             alt = alt.replace("/^", r"/\-")
+            alt = alt.replace("*", r"\*").replace("?", r"\?")
+            alt = re.sub(r"(?<!:)/{2,}", "/", alt)
+            results.append(alt)
         else:
-            alt = alt.replace("**", r"/\{dir\}/")
-        alt = re.sub(r"(?<!:)/{2,}", "/", alt)
-        alt = alt.replace("*", r"\*").replace("?", r"\?")
-        results.append(alt)
+            # Split on ** to inject both variants
+            parts = alt.split("**")
+            if len(parts) == 1:
+                alt = alt.replace("*", r"\*").replace("?", r"\?")
+                alt = re.sub(r"(?<!:)/{2,}", "/", alt)
+                results.append(alt)
+            else:
+                # Generate all combinations: for each **, insert either /\{dir\}/ or \*
+                replacements = [[r"/\{\*\}/", "\*"] for _ in range(len(parts) - 1)]
+                for combo in itertools.product(*replacements):
+                    rebuilt = parts[0]
+                    for insert, part in zip(combo, parts[1:]):
+                        rebuilt += insert + part
+                    rebuilt = rebuilt.replace("?", r"\?")
+                    rebuilt = re.sub(r"(?<!:)/{2,}", "/", rebuilt)
+                    results.append(rebuilt)
+
     return results
 
 
@@ -522,7 +534,7 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
         return f"{ip}:{port}" if port else ip
 
     def process_profile(profile: AppArmorProfile):
-        domain_lines.append(f"<kernel> {profile.identifier}\nuse_profile 0\nuse_group 0\n")
+        domain_lines.append(f"<kernel> {profile.identifier}\nuse_profile 0\nuse_group 0\nfile getattr {profile.identifier}\nfile read {profile.identifier}")
         exception_lines.append(f"initialize_domain {profile.identifier} from any")
         for rule in profile.rules:
             if isinstance(rule, FileRule):
@@ -541,7 +553,7 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                                 if perm.endswith('x') and perm[0] in exec_type_mapping:
                                     mode = perm[0]
                                     tom_cmd = exec_type_mapping[mode]
-                                    exception_lines.append(f"{tom_cmd} {v} from {profile.identifier}")
+                                    exception_lines.append(f"{tom_cmd} {profile.identifier} from {v}")
                                 else:
                                     if perm in apparmor_to_tomoyo:
                                         for tom_perm in apparmor_to_tomoyo[perm]:
@@ -569,7 +581,7 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
             elif isinstance(rule, ChangeProfileRule):
                 for p in expand_variables(rule.path, policy.variables):
                     p2 = apply_aliases(p, policy.aliases).replace(",", "")
-                    exception_lines.append(f"{exec_type_mapping['c']} {p2} from {profile.identifier}")
+                    exception_lines.append(f"{exec_type_mapping['c']} {profile.identifier} from {p2}")
 
             elif isinstance(rule, NetworkRule):
                 dom  = (rule.domain or "").lower()
