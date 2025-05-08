@@ -14,7 +14,7 @@ class AccessTransformer(Transformer):
         return access_list
 
 parser = Lark(grammar, start="start", parser="lalr")
-folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/fails/"
+folder_path = "/home/samos/FEI/ING/year2/diplomovka/tests/passes/"
 
 
 

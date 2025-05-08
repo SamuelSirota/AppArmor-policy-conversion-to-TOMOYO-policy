@@ -169,25 +169,28 @@ class AppArmorTransformer(Transformer):
         return ("rules", clean_rules)
 
     def profile(self, items):
-        profile = AppArmorProfile()
+        profileItem = AppArmorProfile()
         for item in items:
             if item is None:
                 continue
             elif isinstance(item, tuple):
                 key, value = item
                 if key == "flags":
-                    profile.flags = value
+                    profileItem.flags = value
                 elif key == "rules":
-                    profile.rules.extend(value)
+                    profileItem.rules.extend(value)
             elif isinstance(item, str):
-                if not profile.identifier:
-                    profile.identifier = item.strip('"')
+                if not profileItem.identifier:
+                    profileItem.identifier = item.strip('"')
             elif isinstance(item, FileRule) or isinstance(item, AppArmorProfile):
-                profile.rules.append(item)
+                profileItem.rules.append(item)
         if self.current_profile is None:
-            self.policy.profiles.append(profile)
-        self.current_profile = profile
-        return profile
+            self.policy.profiles.append(profileItem)
+        else:
+            for item in profileItem.rules:
+                self.policy.profiles[0].rules.append(item)
+        self.current_profile = profileItem
+        return profileItem
 
     def qualifiers(self, items):
         return None
@@ -468,12 +471,13 @@ def translate_apparmor_pattern(pattern: str) -> list:
                 results.append(alt)
             else:
                 # Generate all combinations: for each **, insert either /\{dir\}/ or \*
-                replacements = [[r"/\{\*\}/", "\*"] for _ in range(len(parts) - 1)]
+                replacements = [[r"/\{\*\}/\*", r"/\{\*\}/", "\*"] for _ in range(len(parts) - 1)]
                 for combo in itertools.product(*replacements):
                     rebuilt = parts[0]
                     for insert, part in zip(combo, parts[1:]):
                         rebuilt += insert + part
                     rebuilt = rebuilt.replace("?", r"\?")
+                    rebuilt = re.sub(r'(?<!\\)\*', r'\\*', rebuilt)
                     rebuilt = re.sub(r"(?<!:)/{2,}", "/", rebuilt)
                     results.append(rebuilt)
 
@@ -489,7 +493,7 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
     Everything else (including unix-domain binds) is emitted.
     """
     apparmor_to_tomoyo = {
-        "r": ["file read", "file getattr"],
+        "r": ["file read/getattr"],
         "w": [
             "file write", "file create", "file unlink", "file chown",
             "file chgrp", "file chmod", "file mkdir", "file rmdir",
@@ -557,7 +561,7 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                                 else:
                                     if perm in apparmor_to_tomoyo:
                                         for tom_perm in apparmor_to_tomoyo[perm]:
-                                            domain_lines.append(f"{tom_perm} {v}")
+                                            domain_lines.append(f"{tom_perm} {v} {"0x5401" if tom_perm == 'file ioctl' else ""}")
 
             elif isinstance(rule, LinkRule):
                 expanded_source = expand_variables(rule.source, policy.variables)

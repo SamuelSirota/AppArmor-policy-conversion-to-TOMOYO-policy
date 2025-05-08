@@ -1,6 +1,6 @@
 from typing import List, Tuple, Optional
 from datetime import datetime
-import glob
+import glob, os
 
 def parse_operations_string(operations_str: str) -> List[Tuple[str, str]]:
     """
@@ -36,54 +36,55 @@ def process_file_operations(
       - otherwise, try to open(path) in 'r' or 'w' and catch exceptions.
 
     Returns a list of (operation, concrete_path, status) where status is:
-      - True   = able to open for read/write
+      - True   = able to read/write
       - False  = PermissionError
-      - None   = FileNotFound / IsADirectoryError / any other
+      - None   = FileNotFoundError / OSError
     """
     report: List[Tuple[str, str, Optional[bool]]] = []
+
+    def test_path(operation: str, path: str) -> Tuple[str, str, Optional[bool]]:
+        mode = 'r' if operation == 'read' else 'w'
+        try:
+            with open(path, mode):
+                return (operation, path, True)
+        except PermissionError:
+            return (operation, path, False)
+        except IsADirectoryError:
+            try:
+                if operation == 'read':
+                    _ = os.listdir(path)
+                else:  # write
+                    test_file = os.path.join(path, ".tmp_test_write")
+                    with open(test_file, 'w') as f:
+                        f.write("test")
+                    os.remove(test_file)
+                return (operation, path, True)
+            except PermissionError:
+                return (operation, path, False)
+            except (FileNotFoundError, OSError):
+                return (operation, path, None)
+        except (FileNotFoundError, OSError):
+            return (operation, path, None)
 
     for operation, path in operations:
         if operation not in ('read', 'write'):
             continue
 
-        mode = 'r' if operation == 'read' else 'w'
-
         if '*' in path:
-            # choose recursive only if '**' is present
             recursive = '**' in path
             matched_any = False
-
-            # iglob returns matches lazily, so it'll stop searching
-            # as soon as we break out of this loop.
             for match in glob.iglob(path, recursive=recursive):
                 matched_any = True
-                try:
-                    with open(match, mode):
-                        report.append((operation, match, True))
-                except PermissionError:
-                    report.append((operation, match, False))
-                except (FileNotFoundError, IsADirectoryError, OSError):
-                    report.append((operation, match, None))
-                # stop after the first match
-                break
-
+                report.append(test_path(operation, match))
+                break  # only first match
             if not matched_any:
-                # no match found at all
                 report.append((operation, path, None))
-
         else:
-            # literal path
-            try:
-                with open(path, mode):
-                    report.append((operation, path, True))
-            except PermissionError:
-                report.append((operation, path, False))
-            except (FileNotFoundError, IsADirectoryError, OSError):
-                report.append((operation, path, None))
+            report.append(test_path(operation, path))
 
     return report
 
-def generate_report(report: List[Tuple[str, str, bool]], output_file: str = "tests/maaan/file_operation_report.txt") -> None:
+def generate_report(allow_report: List[Tuple[str, str, bool]], deny_report: List[Tuple[str, str, bool]], output_file: str = "tests/maaan/file_operation_report.txt") -> None:
     """
     Generate a text report from the processed operations and save it to a file.
     """
@@ -91,10 +92,12 @@ def generate_report(report: List[Tuple[str, str, bool]], output_file: str = "tes
     with open(output_file, 'w') as f:
         f.write(f"File Operation Report - Generated on {timestamp}\n")
         f.write("-" * 80 + "\n")
+        f.write("Allowed Operations:\n")
+        f.write("-" * 80 + "\n")
         f.write(f"{'Operation':<10} {'Path':<60} {'Status':<10}\n")
         f.write("-" * 80 + "\n")
         
-        for operation, path, success in report:
+        for operation, path, success in allow_report:
             if success is None:
                 status = "None"
             elif success:
@@ -102,15 +105,32 @@ def generate_report(report: List[Tuple[str, str, bool]], output_file: str = "tes
             elif not success:
                 status = "Denied"
             f.write(f"{operation:<10} {path:<60} {status:<10}\n")
-    
+            
+        f.write("-" * 80 + "\n")
+        f.write("\nDenied Operations:\n")
+        f.write("-" * 80 + "\n")
+        
+        for operation, path, success in deny_report:
+            if success is None:
+                status = "None"
+            elif success:
+                status = "Allowed"
+            elif not success:
+                status = "Denied"
+            f.write(f"{operation:<10} {path:<60} {status:<10}\n")
+        
     print(f"Report generated: {output_file}")
 
 if __name__ == "__main__":
     with open("tests/maaan/man_flat_paths.txt", 'r') as f:
             operations_str = f.read()
+    with open("tests/maaan/deny_flat_paths.txt", 'r') as f:
+            deny_operations_str = f.read()
             
-    operations = parse_operations_string(operations_str)
+    allowed_operations = parse_operations_string(operations_str)
+    denied_operations = parse_operations_string(deny_operations_str)
     
-    report = process_file_operations(operations)
+    allowed_report = process_file_operations(allowed_operations)
+    deny_report = process_file_operations(denied_operations)
     
-    generate_report(report)
+    generate_report(allowed_report, deny_report)

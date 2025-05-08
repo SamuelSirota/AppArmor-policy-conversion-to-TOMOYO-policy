@@ -104,7 +104,7 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 - [x] spravil som link, network teda nemam
 - [x] pridat ze Px resp ostatne x pravidla co menia domeny pridat do exception policy tie zmeny domen
 - [x] musim spravit ze mi to vyexportne jedno domain_policy a tie exception policy
-- [ ] tieto dve musim dajak pridat do tomoyo ale nechcem zmazat to co tam uz je
+- [x] tieto dve musim dajak pridat do tomoyo ale nechcem zmazat to co tam uz je
 
 - testing
   - save existing policy
@@ -116,9 +116,32 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
       - okrem toho by sme tam pridali aj rules ktore by nemali byt povolene
       - vystupom je dlhy zoznam ci pravidlo je povolene alebo nie (z domain.conf rules zistime True positive a False positive, z tych co tam nemaju byt True negative a False negative)
 
-## po
+## po 30.4.2025
 
 - keby som spravil komplement k true positive tak to bude zbytocne nafuknute
-- ze nejake pribuzne subory abo co 
+- ze nejake pribuzne subory abo co
 - sensitivita, recall, precision, statistika, fscore2 (confusion matrix wiki)
-- 
+
+## TODO
+
+- [x] spravit false accessy
+  - [x] na AA asi funguje /** na tomoyo ale nie
+    - [x] mozno aese skusit ci nemam zle recursive dir globbing
+- [x] ioctl skusit bez toho (nebolo to treba v TOMOYO)
+- [x] neviem co s tymi accessmi co by mali by a niesu povolene, jednoducho tie opacne accessy
+
+## TODO na utorok 6.5.2025
+
+- [x] zacat pisat o programe, kode, algoritme, atd, atd
+- [x] spravit mini kodik ktory mi spravi tabulku z tych 2 reportov (aby som aj poslal roderikovi)
+  - [x] napisat roderikovi moje "vysledky" z testovania ig atdatd
+  - [x] spytat sa ho ci mi cital overleaf
+  STREDA 7.5.2025
+- [x] vysetril som nezrovnalosti v testing vysledkoch
+- [x] pisat dalej v praci
+  - [x] IR
+  - [x] preprocessing
+    - [ ] pridat moznost zmenit relativny priecinok pre includes
+  - [x] Transformer
+  - [ ] konverzia na tomoyo
+    - [ ] variables, aliases, globbing
