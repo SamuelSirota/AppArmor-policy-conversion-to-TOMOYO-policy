@@ -1,0 +1,98 @@
+acl_group 2 file read/getattr /usr/lib/x86_64-linux-gnu/libm.so.6
+acl_group 2 file read/getattr /usr/lib/x86_64-linux-gnu/libz.so.1.3
+acl_group 2 file read/getattr /usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1
+acl_group 2 file read/getattr /usr/lib/x86_64-linux-gnu/libc.so.6
+acl_group 2 file getattr /usr/bin/python3.12
+acl_group 2 file getattr /usr/lib/python3.12/os.py
+acl_group 2 file read/getattr /usr/share/zoneinfo/Europe/Copenhagen
+acl_group 2 file getattr /usr/lib/python3.12/encodings/__init__.py
+acl_group 2 file read/getattr /usr/lib/python3.12/encodings/__pycache__/__init__.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/encodings/__pycache__/__init__.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/encodings/aliases.py
+acl_group 2 file read/getattr /usr/lib/python3.12/encodings/__pycache__/aliases.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/encodings/__pycache__/aliases.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/encodings/utf_8.py
+acl_group 2 file read/getattr /usr/lib/python3.12/encodings/__pycache__/utf_8.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/encodings/__pycache__/utf_8.cpython-312.pyc 0x5401
+acl_group 2 file getattr devpts:/2
+acl_group 2 file ioctl devpts:/2 0x5401
+acl_group 2 file read/getattr /usr/lib/python3/dist-packages/distutils-precedence.pth
+acl_group 2 file ioctl /usr/lib/python3/dist-packages/distutils-precedence.pth 0x5401
+acl_group 2 file getattr /usr/lib/python3/dist-packages/_distutils_hack/__init__.py
+acl_group 2 file read/getattr /usr/lib/python3/dist-packages/_distutils_hack/__pycache__/__init__.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3/dist-packages/_distutils_hack/__pycache__/__init__.cpython-312.pyc 0x5401
+acl_group 2 file getattr /etc/python3.12/sitecustomize.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/sitecustomize.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/sitecustomize.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3/dist-packages/apport_python_hook.py
+acl_group 2 file read/getattr /usr/lib/python3/dist-packages/__pycache__/apport_python_hook.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3/dist-packages/__pycache__/apport_python_hook.cpython-312.pyc 0x5401
+acl_group 2 file read/getattr /home/ubuntu24/Desktop/testing.py
+acl_group 2 file ioctl /home/ubuntu24/Desktop/testing.py 0x5401
+acl_group 2 file ioctl /home/ubuntu24/Desktop/testing.py 0x5451
+acl_group 2 file getattr /usr/lib/python3.12/typing.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/typing.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/typing.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/collections/__init__.py
+acl_group 2 file read/getattr /usr/lib/python3.12/collections/__pycache__/__init__.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/collections/__pycache__/__init__.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/keyword.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/keyword.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/keyword.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/operator.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/operator.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/operator.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/reprlib.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/reprlib.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/reprlib.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/collections/abc.py
+acl_group 2 file read/getattr /usr/lib/python3.12/collections/__pycache__/abc.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/collections/__pycache__/abc.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/copyreg.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/copyreg.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/copyreg.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/contextlib.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/contextlib.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/contextlib.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/functools.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/functools.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/functools.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/types.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/types.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/types.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/re/__init__.py
+acl_group 2 file read/getattr /usr/lib/python3.12/re/__pycache__/__init__.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/re/__pycache__/__init__.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/enum.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/enum.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/enum.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/re/_compiler.py
+acl_group 2 file read/getattr /usr/lib/python3.12/re/__pycache__/_compiler.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/re/__pycache__/_compiler.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/re/_parser.py
+acl_group 2 file read/getattr /usr/lib/python3.12/re/__pycache__/_parser.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/re/__pycache__/_parser.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/re/_constants.py
+acl_group 2 file read/getattr /usr/lib/python3.12/re/__pycache__/_constants.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/re/__pycache__/_constants.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/re/_casefix.py
+acl_group 2 file read/getattr /usr/lib/python3.12/re/__pycache__/_casefix.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/re/__pycache__/_casefix.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/warnings.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/warnings.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/warnings.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/datetime.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/datetime.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/datetime.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/glob.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/glob.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/glob.cpython-312.pyc 0x5401
+acl_group 2 file getattr /usr/lib/python3.12/fnmatch.py
+acl_group 2 file read/getattr /usr/lib/python3.12/__pycache__/fnmatch.cpython-312.pyc
+acl_group 2 file ioctl /usr/lib/python3.12/__pycache__/fnmatch.cpython-312.pyc 0x5401
+acl_group 2 file read/getattr /home/ubuntu24/Desktop/man_flat_paths.txt
+acl_group 2 file read/getattr /home/ubuntu24/Desktop/deny_flat_paths.txt
+acl_group 2 file ioctl /home/ubuntu24/Desktop/man_flat_paths.txt 0x5401
+acl_group 2 file ioctl /home/ubuntu24/Desktop/deny_flat_paths.txt 0x5401
+acl_group 2 file write/getattr/truncate /home/ubuntu24/Desktop/file_operation_report.txt
+acl_group 2 file ioctl /home/ubuntu24/Desktop/fcatile_operation_report.txt 0x5401

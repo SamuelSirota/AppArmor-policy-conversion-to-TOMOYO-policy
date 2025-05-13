@@ -1,0 +1,27 @@
+/root/.bash_history                                          r
+/dev/mem                                                     rw
+/var/log/btmp                                                r
+/proc/kcore                                                  r
+/proc/1/environ                                              r
+/etc/shadow                                                  r
+/etc/shadow                                                  w
+/etc/gshadow                                                 r
+/etc/gshadow                                                 w
+/etc/passwd                                                  w
+/etc/group                                                   w
+/etc/sudoers                                                 w
+/etc/sudoers.d/**                                            w
+/etc/ssh/sshd_config                                         w
+/boot/**                                                     w
+/sys/kernel/**                                               w
+/etc/pam.d/**                                                w
+/etc/crontab                                                 w
+/etc/cron.d/**                                               w
+/var/log/auth.log                                            w
+/etc/ld.so.preload                                           w
+/var/cache/man/**                                            w,
+/dev/console                                                 rw,
+/root/.Private/                                              mrixwlk,
+
+
+

@@ -1,0 +1,105 @@
+file getattr  /etc/python3.12/sitecustomize.py
+file getattr  /home/ubuntu24/Desktop/file_operation_report.txt
+file getattr  /home/ubuntu24/Desktop/man_flat_paths.txt
+file getattr  /home/ubuntu24/Desktop/testing.py
+file getattr  /usr/bin/python3.12
+file getattr  /usr/lib/
+file getattr  /usr/lib/locale/locale-archive
+file getattr  /usr/lib/python3.12/\*
+file getattr  /usr/lib/python3.12/\{\*\}/
+file getattr  /usr/lib/python3.12/\{\*\}/\*
+file getattr  /usr/lib/python3/dist-packages/\*
+file getattr  /usr/lib/python3/dist-packages/\{\*\}/
+file getattr  /usr/lib/python3/dist-packages/\{\*\}/\*
+file getattr  /usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache
+file getattr  /usr/lib/x86_64-linux-gnu/libc.so.6
+file getattr  /usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1
+file getattr  /usr/lib/x86_64-linux-gnu/libm.so.6
+file getattr  /usr/lib/x86_64-linux-gnu/libz.so.1.3
+file getattr  /usr/local/lib/python3.12/dist-packages/
+file getattr  /usr/share/zoneinfo/Europe/Copenhagen
+file getattr  devpts:/1
+file ioctl    /home/ubuntu24/Desktop/file_operation_report.txt 0x5401
+file ioctl    /home/ubuntu24/Desktop/man_flat_paths.txt 0x5401
+file ioctl    /home/ubuntu24/Desktop/testing.py 0x5401
+file ioctl    /home/ubuntu24/Desktop/testing.py 0x5451
+file ioctl    /usr/lib/python3.12/__pycache__/sitecustomize.cpython-312.pyc 0x5401
+file ioctl    /usr/lib/python3.12/encodings/__pycache__/__init__.cpython-312.pyc 0x5401
+file ioctl    /usr/lib/python3.12/encodings/__pycache__/aliases.cpython-312.pyc 0x5401
+file ioctl    /usr/lib/python3.12/encodings/__pycache__/utf_8.cpython-312.pyc 0x5401
+file ioctl    /usr/lib/python3/dist-packages/__pycache__/apport_python_hook.cpython-312.pyc 0x5401
+file ioctl    /usr/lib/python3/dist-packages/_distutils_hack/__pycache__/__init__.cpython-312.pyc 0x5401
+file ioctl    /usr/lib/python3/dist-packages/distutils-precedence.pth 0x5401
+file ioctl    devpts:/1 0x5401
+file read     /etc/ld.so.cache
+file read     /home/ubuntu24/Desktop/man_flat_paths.txt
+file read     /home/ubuntu24/Desktop/testing.py
+file read     /usr/lib/locale/locale-archive
+file read     /usr/lib/python3.12/
+file read     /usr/lib/python3.12/__pycache__/sitecustomize.cpython-312.pyc
+file read     /usr/lib/python3.12/encodings/
+file read     /usr/lib/python3.12/encodings/__pycache__/__init__.cpython-312.pyc
+file read     /usr/lib/python3.12/encodings/__pycache__/aliases.cpython-312.pyc
+file read     /usr/lib/python3.12/encodings/__pycache__/utf_8.cpython-312.pyc
+file read     /usr/lib/python3.12/lib-dynload/
+file read     /usr/lib/python3/dist-packages/
+file read     /usr/lib/python3/dist-packages/__pycache__/apport_python_hook.cpython-312.pyc
+file read     /usr/lib/python3/dist-packages/_distutils_hack/__pycache__/__init__.cpython-312.pyc
+file read     /usr/lib/python3/dist-packages/distutils-precedence.pth
+file read     /usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache
+file read     /usr/lib/x86_64-linux-gnu/libc.so.6
+file read     /usr/lib/x86_64-linux-gnu/libexpat.so.1.9.1
+file read     /usr/lib/x86_64-linux-gnu/libm.so.6
+file read     /usr/lib/x86_64-linux-gnu/libz.so.1.3
+file read     /usr/local/lib/python3.12/dist-packages/
+file read     /usr/share/zoneinfo/Europe/Copenhagen
+file truncate /home/ubuntu24/Desktop/file_operation_report.txt
+file write    /home/ubuntu24/Desktop/file_operation_report.txt
+misc env      COLORTERM
+misc env      DBUS_SESSION_BUS_ADDRESS
+misc env      DEBUGINFOD_URLS
+misc env      DESKTOP_SESSION
+misc env      DISPLAY
+misc env      GDMSESSION
+misc env      GNOME_DESKTOP_SESSION_ID
+misc env      GNOME_SETUP_DISPLAY
+misc env      GNOME_SHELL_SESSION_MODE
+misc env      GNOME_TERMINAL_SCREEN
+misc env      GNOME_TERMINAL_SERVICE
+misc env      GSM_SKIP_SSH_AGENT_WORKAROUND
+misc env      GTK_MODULES
+misc env      HOME
+misc env      IM_CONFIG_PHASE
+misc env      LANG
+misc env      LESSCLOSE
+misc env      LESSOPEN
+misc env      LOGNAME
+misc env      LS_COLORS
+misc env      MEMORY_PRESSURE_WATCH
+misc env      MEMORY_PRESSURE_WRITE
+misc env      OLDPWD
+misc env      PATH
+misc env      PWD
+misc env      QT_ACCESSIBILITY
+misc env      QT_IM_MODULE
+misc env      SESSION_MANAGER
+misc env      SHELL
+misc env      SHLVL
+misc env      SSH_AUTH_SOCK
+misc env      SYSTEMD_EXEC_PID
+misc env      TERM
+misc env      USER
+misc env      USERNAME
+misc env      VTE_VERSION
+misc env      WAYLAND_DISPLAY
+misc env      XAUTHORITY
+misc env      XDG_CONFIG_DIRS
+misc env      XDG_CURRENT_DESKTOP
+misc env      XDG_DATA_DIRS
+misc env      XDG_MENU_PREFIX
+misc env      XDG_RUNTIME_DIR
+misc env      XDG_SESSION_CLASS
+misc env      XDG_SESSION_DESKTOP
+misc env      XDG_SESSION_TYPE
+misc env      XMODIFIERS
+misc env      _
