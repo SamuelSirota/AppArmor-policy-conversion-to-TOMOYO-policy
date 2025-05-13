@@ -1,4 +1,18 @@
-from lark import Lark, Transformer, Tree
+"""This module provides a parser and transformer for AppArmor policies.
+It includes classes for representing various AppArmor rules, such as file rules,
+network rules, and change profile rules.
+It also includes functions for converting AppArmor policies to TOMOYO-compatible
+domain and exception policies.
+
+This module uses the Lark library for parsing and transforming the AppArmor policy
+grammar. The grammar is defined in a separate file (apparmor.lark).
+The code was made with the help of ChatGPT o4-mini, Grok 3 mini and GitHub Copilot.
+"""
+
+__author__ = "Samuel Martin Sirota"
+__year__ = "2025"
+
+from lark import Lark, Transformer
 from lark.lexer import Token
 import os, re, itertools
 
@@ -41,9 +55,9 @@ class NetworkRule:
         if self.socktype:
             parts.append(self.socktype)
         if self.local:
-            parts.append("local="+",".join(f"{k}={v}" for k,v in self.local.items()))
+            parts.append("local=" + ",".join(f"{k}={v}" for k, v in self.local.items()))
         if self.peer:
-            parts.append("peer="+",".join(f"{k}={v}" for k,v in self.peer.items()))
+            parts.append("peer=" + ",".join(f"{k}={v}" for k, v in self.peer.items()))
         return " ".join(parts)
 
 
@@ -91,6 +105,15 @@ class AppArmorPolicy:
 
 
 class AppArmorTransformer(Transformer):
+    """
+    This class transforms the parsed AppArmor policy tree into an internal representation.
+    It uses the Lark library to parse the AppArmor policy grammar and convert it into
+    a structured format that can be further processed or converted to other formats.
+    The transformer methods correspond to the grammar rules defined in the AppArmor
+    grammar file (apparmor.lark).
+    Each method processes a specific part of the policy and constructs the appropriate
+    objects or data structures.
+    """
     def __init__(self):
         super().__init__()
         self.policy = AppArmorPolicy()
@@ -105,18 +128,13 @@ class AppArmorTransformer(Transformer):
 
     def variable_assignment(self, items):
         var_name = str(items[0])
-        raw_rhs  = str(items[1]).strip()
-        # split on any runs of whitespace:
+        raw_rhs = str(items[1]).strip()
         values = raw_rhs.split()
-
-        # store or extend exactly those substrings:
         self.policy.variables.setdefault(var_name, []).extend(values)
         return None
 
-
     def path_expr(self, items):
         return "".join(str(i) for i in items)
-
 
     def alias_rule(self, items):
         alias = str(items[0]).strip('"')
@@ -238,14 +256,14 @@ class AppArmorTransformer(Transformer):
         return FileRule()
 
     def capability_rule(self, items):
-        return #"capability " + " ".join(str(i) for i in items if isinstance(i, str))
+        return  # "capability " + " ".join(str(i) for i in items if isinstance(i, str))
 
     def network_rule(self, items):
         access = []
         domain = None
         socktype = None
         local = {}
-        peer  = {}
+        peer = {}
 
         for tok in items:
             if isinstance(tok, list) and all(isinstance(a, str) for a in tok):
@@ -261,7 +279,7 @@ class AppArmorTransformer(Transformer):
                 for _, key, val in tok:
                     peer[key] = val
         return NetworkRule(access, domain, socktype, local, peer)
-   
+
     def network_ip_cond(self, items):
         val = items[-1].value if isinstance(items[-1], Token) else items[-1]
         return ("local", "ip", val)
@@ -327,14 +345,12 @@ def expand_variables(path, variables):
             if not matches:
                 new_paths.append(p)
                 continue
-
             value_lists = []
             for var in matches:
                 values = variables.get(f"@{{{var}}}", [])
                 if isinstance(values, str):
                     values = values.split()
                 value_lists.append(values)
-
             for combo in itertools.product(*value_lists):
                 expanded_p = p
                 for var, val in zip(matches, combo):
@@ -342,11 +358,9 @@ def expand_variables(path, variables):
                 expanded_p = re.sub(r"/{2,}", "/", expanded_p)
                 new_paths.append(expanded_p)
                 expanded = True
-
         paths = new_paths
         if not expanded:
             break
-
     return paths
 
 
@@ -437,10 +451,10 @@ def escape_for_tomoyo(text: str) -> str:
 
 
 def translate_apparmor_pattern(pattern: str) -> list:
-    """
+    r"""
     Translate an AppArmor glob pattern into one or more TOMOYO-compatible patterns.
     Enhancements:
-      - For `**`, produce both "/\{dir\}/" and "\*" to include current and subdirectories.
+      - For `**`, produce "/\{dir\}/", "/\{dir\}/\*" and "\*" to include current and subdirectories.
     """
     alternatives = expand_brace_expressions(pattern)
     temp = []
@@ -457,92 +471,115 @@ def translate_apparmor_pattern(pattern: str) -> list:
 
         if "^" in alt:
             alt = alt.replace("**^", r"/\{dir\}/\-")
-            alt = re.sub(r"(\*)(\^)", lambda m: escape_for_tomoyo(m.group(1)) + r"\-", alt)
+            alt = re.sub(
+                r"(\*)(\^)", lambda m: escape_for_tomoyo(m.group(1)) + r"\-", alt
+            )
             alt = alt.replace("/^", r"/\-")
             alt = alt.replace("*", r"\*").replace("?", r"\?")
             alt = re.sub(r"(?<!:)/{2,}", "/", alt)
             results.append(alt)
         else:
-            # Split on ** to inject both variants
             parts = alt.split("**")
             if len(parts) == 1:
                 alt = alt.replace("*", r"\*").replace("?", r"\?")
                 alt = re.sub(r"(?<!:)/{2,}", "/", alt)
                 results.append(alt)
             else:
-                # Generate all combinations: for each **, insert either /\{dir\}/ or \*
-                replacements = [[r"/\{\*\}/\*", r"/\{\*\}/", "\*"] for _ in range(len(parts) - 1)]
+                replacements = [
+                    [r"/\{\*\}/\*", r"/\{\*\}/", r"\*"] for _ in range(len(parts) - 1)
+                ]
                 for combo in itertools.product(*replacements):
                     rebuilt = parts[0]
                     for insert, part in zip(combo, parts[1:]):
                         rebuilt += insert + part
                     rebuilt = rebuilt.replace("?", r"\?")
-                    rebuilt = re.sub(r'(?<!\\)\*', r'\\*', rebuilt)
+                    rebuilt = re.sub(r"(?<!\\)\*", r"\\*", rebuilt)
                     rebuilt = re.sub(r"(?<!:)/{2,}", "/", rebuilt)
                     results.append(rebuilt)
-
     return results
 
 
 def convert_to_tomoyo(policy: AppArmorPolicy):
     """
-    Convert AppArmor policy to TOMOYO format, but skip only when:
-      1) domain != "unix"
-      2) AND socktype not in {stream,dgram,seqpacket}
-      3) AND access ∩ {bind,listen,connect,send} is empty
-    Everything else (including unix-domain binds) is emitted.
+    Convert an AppArmor policy to TOMOYO domain and exception policies.
+    This function processes the AppArmor policy and generates TOMOYO-compatible
+    domain and exception policies based on the rules defined in the AppArmor policy.
+    The conversion includes handling file rules, link rules, change profile rules and network rules.
+    The generated TOMOYO policies are returned as strings.
+    The function also handles the translation of AppArmor-specific permissions to TOMOYO permissions.
+    The TOMOYO domain policy is generated based on the file and network rules, while the exception
+    policy is generated based on the change profile rules.
     """
     apparmor_to_tomoyo = {
         "r": ["file read/getattr"],
         "w": [
-            "file write", "file create", "file unlink", "file chown",
-            "file chgrp", "file chmod", "file mkdir", "file rmdir",
-            "file truncate", "file rename",
+            "file write",
+            "file create",
+            "file unlink",
+            "file chown",
+            "file chgrp",
+            "file chmod",
+            "file mkdir",
+            "file rmdir",
+            "file truncate",
+            "file rename",
         ],
         "a": ["file append"],
-        "x": ["file execute"],  "ix": ["file execute"],  "ux": ["file execute"],
-        "Ux": ["file execute"], "px": ["file execute"],  "Px": ["file execute"],
-        "cx": ["file execute"], "Cx": ["file execute"],  "pix": ["file execute"],
-        "Pix": ["file execute"],"cix": ["file execute"], "Cix": ["file execute"],
-        "pux": ["file execute"],"PUx": ["file execute"], "cux": ["file execute"],
+        "x": ["file execute"],
+        "ix": ["file execute"],
+        "ux": ["file execute"],
+        "Ux": ["file execute"],
+        "px": ["file execute"],
+        "Px": ["file execute"],
+        "cx": ["file execute"],
+        "Cx": ["file execute"],
+        "pix": ["file execute"],
+        "Pix": ["file execute"],
+        "cix": ["file execute"],
+        "Cix": ["file execute"],
+        "pux": ["file execute"],
+        "PUx": ["file execute"],
+        "cux": ["file execute"],
         "CUx": ["file execute"],
         "l": ["file link", "file symlink"],
     }
 
     apparmor_net_to_tomoyo = {
-        "bind":    "bind",
-        "listen":  "listen",
+        "bind": "bind",
+        "listen": "listen",
         "connect": "connect",
-        "accept":  "accept",
-        "send":    "send",
+        "accept": "accept",
+        "send": "send",
         "receive": "receive",
     }
 
     domain_lines = []
     exception_lines = []
     exec_type_mapping = {
-        'p': 'initialize_domain',
-        'P': 'initialize_domain',
-        'c': 'initialize_domain',
-        'C': 'initialize_domain',
-        'u': 'reset_domain',
-        'U': 'reset_domain',
-        'i': 'keep_domain',
+        "p": "initialize_domain",
+        "P": "initialize_domain",
+        "c": "initialize_domain",
+        "C": "initialize_domain",
+        "u": "reset_domain",
+        "U": "reset_domain",
+        "i": "keep_domain",
     }
     valid_types = {"stream", "dgram", "seqpacket"}
-    valid_accs  = {"bind", "listen", "connect", "send"}
+    valid_accs = {"bind", "listen", "connect", "send"}
 
     def fmt_addr(d):
-        ip   = d.get("ip", "NONE")
+        ip = d.get("ip", "NONE")
         port = d.get("port")
         return f"{ip}:{port}" if port else ip
 
     def process_profile(profile: AppArmorProfile):
-        domain_lines.append(f"<kernel> {profile.identifier}\nuse_profile 0\nuse_group 0\nfile getattr {profile.identifier}\nfile read {profile.identifier}")
+        domain_lines.append(
+            f"<kernel> {profile.identifier}\nuse_profile 0\nuse_group 0\nfile getattr {profile.identifier}\nfile read {profile.identifier}"
+        )
         exception_lines.append(f"initialize_domain {profile.identifier} from any")
         for rule in profile.rules:
             if isinstance(rule, FileRule):
-                if "pid" in rule.path:#i dont like this buuuut it helps
+                if "pid" in rule.path:  # i dont like this buuuut it helps [1-4999999]
                     continue
                 else:
                     expanded = expand_variables(rule.path, policy.variables)
@@ -550,19 +587,21 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                         path = apply_aliases(path, policy.aliases)
                         variants = (
                             translate_apparmor_pattern(path)
-                            if any(c in path for c in "{[?*}") else [path]
+                            if any(c in path for c in "{[?*}")
+                            else [path]
                         )
                         for v in variants:
                             for perm in rule.permissions:
-                                if perm.endswith('x') and perm[0] in exec_type_mapping:
+                                if perm.endswith("x") and perm[0] in exec_type_mapping:
                                     mode = perm[0]
                                     tom_cmd = exec_type_mapping[mode]
-                                    exception_lines.append(f"{tom_cmd} {profile.identifier} from {v}")
+                                    exception_lines.append(
+                                        f"{tom_cmd} {v} from {profile.identifier}"
+                                    )
                                 else:
                                     if perm in apparmor_to_tomoyo:
                                         for tom_perm in apparmor_to_tomoyo[perm]:
-                                            domain_lines.append(f"{tom_perm} {v} {"0x5401" if tom_perm == 'file ioctl' else ""}")
-
+                                            domain_lines.append(f"{tom_perm} {v}")
             elif isinstance(rule, LinkRule):
                 expanded_source = expand_variables(rule.source, policy.variables)
                 expanded_target = expand_variables(rule.target, policy.variables)
@@ -570,31 +609,33 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                     source = apply_aliases(source, policy.aliases)
                     source_variants = (
                         translate_apparmor_pattern(source)
-                        if any(c in source for c in "{[?*}") else [source]
+                        if any(c in source for c in "{[?*}")
+                        else [source]
                     )
                     for s in source_variants:
                         for target in expanded_target:
                             target = apply_aliases(target, policy.aliases)
                             target_variants = (
                                 translate_apparmor_pattern(target)
-                                if any(c in target for c in "{[?*}") else [target]
+                                if any(c in target for c in "{[?*}")
+                                else [target]
                             )
                             for t in target_variants:
                                 domain_lines.append(f"file link {s} {t}")
-            
             elif isinstance(rule, ChangeProfileRule):
                 for p in expand_variables(rule.path, policy.variables):
                     p2 = apply_aliases(p, policy.aliases).replace(",", "")
-                    exception_lines.append(f"{exec_type_mapping['c']} {profile.identifier} from {p2}")
-
+                    exception_lines.append(
+                        f"{exec_type_mapping['c']} {p2} from {profile.identifier}"
+                    )
             elif isinstance(rule, NetworkRule):
-                dom  = (rule.domain or "").lower()
-                st   = (rule.socktype or "").lower()
+                dom = (rule.domain or "").lower()
+                st = (rule.socktype or "").lower()
                 accs = set(rule.access or [])
                 if dom != "unix" and st not in valid_types and not (accs & valid_accs):
                     continue
                 local_addr = fmt_addr(rule.local)
-                peers      = [rule.peer] if rule.peer else [None]
+                peers = [rule.peer] if rule.peer else [None]
 
                 for acc in rule.access:
                     tom_op = apparmor_net_to_tomoyo.get(acc, acc)
@@ -602,6 +643,7 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                         addr = fmt_addr(peer) if peer else local_addr
                         domain_lines.append(f"network {dom} {st} {tom_op} {addr}")
         domain_lines.append("")
+
     for prof in policy.profiles:
         process_profile(prof)
     return "\n".join(domain_lines), "\n".join(exception_lines)
@@ -642,10 +684,13 @@ def preprocess_policy_file(
                     include_path = os.path.join(base_policy_dir, raw_path)
                 elif '"' in line_strip:
                     raw_path = line_strip.split('"', 1)[1].rsplit('"', 1)[0]
-                    include_path = raw_path if os.path.isabs(raw_path) else os.path.join(relative_include_dir, raw_path)
+                    include_path = (
+                        raw_path
+                        if os.path.isabs(raw_path)
+                        else os.path.join(relative_include_dir, raw_path)
+                    )
                 else:
                     raise ValueError(f"Incorrect include directive: {line_strip}")
-
                 if include_path and os.path.isdir(include_path):
                     print(f"Including directory: {include_path}")
                     for entry in sorted(os.listdir(include_path)):
@@ -659,7 +704,6 @@ def preprocess_policy_file(
                             )
                             result_lines.append(included_text)
                     continue
-                
                 if include_path and os.path.exists(include_path):
                     print(f"Including file: {include_path}")
                     included_text = preprocess_policy_file(
@@ -682,6 +726,16 @@ def preprocess_policy_file(
 
 
 if __name__ == "__main__":
+    """
+    This is the main entry point of the script.
+    We use a for loop to iterate over all files in the specified folder.
+    For each file, we preprocess it, parse it using the Lark parser,
+    and then transform it into an internal representation.
+    Finally, we convert the AppArmor policy to TOMOYO domain and exception policies.
+    The script handles exceptions and prints the results to the console.
+    This script was used in the development of the AppArmor to TOMOYO converter.
+    It is not intended to be run as a standalone script.
+    """
     with open("apparmor.lark", "r") as f:
         grammar = f.read()
     parser = Lark(grammar, start="start", parser="lalr")
@@ -707,7 +761,7 @@ if __name__ == "__main__":
                 result = transformer.transform(tree)
                 print(result)
                 print("\n---- TOMOYO Domain Policy ----")
-                domain_lines, exception_lines  = convert_to_tomoyo(result)
+                domain_lines, exception_lines = convert_to_tomoyo(result)
                 print(domain_lines)
                 print("\n--- TOMOYO Exception Policy ---")
                 print(exception_lines)

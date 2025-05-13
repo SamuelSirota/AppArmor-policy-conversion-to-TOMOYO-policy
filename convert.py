@@ -1,13 +1,24 @@
+"""This code converts AppArmor policies to TOMOYO policies.
+We use classes and functions from the transformer.py file to convert the policies.
+The code uses the Lark library to parse the AppArmor policy files.
+
+We use the Lark library for parsing and transforming the AppArmor policy
+grammar. The grammar is defined in a separate file (apparmor.lark).
+The code was made with the help of ChatGPT o4-mini, Grok 3 mini and GitHub Copilot.
+"""
+
+__author__ = "Samuel Martin Sirota"
+__year__ = "2025"
+
 from lark import Lark
 import os, sys
 from transformer import AppArmorTransformer, preprocess_policy_file, convert_to_tomoyo
 
-   
+
 def main():
     if len(sys.argv) != 4:
         print("Usage: python convert.py apparmor_policy domain_policy exception_policy")
         sys.exit(1)
-
     apparmor_file = sys.argv[1]
     domain_file = sys.argv[2]
     exception_file = sys.argv[3]
@@ -15,7 +26,7 @@ def main():
     print("Argument 1:", apparmor_file)
     print("Argument 2:", domain_file)
     print("Argument 3:", exception_file)
-    
+
     with open("apparmor.lark", "r") as f:
         grammar = f.read()
     parser = Lark(grammar, start="start", parser="lalr")
@@ -38,7 +49,7 @@ def main():
         result = transformer.transform(tree)
         print(result)
         print("\n---- TOMOYO Domain Policy ----")
-        domain_lines, exception_lines  = convert_to_tomoyo(result)
+        domain_lines, exception_lines = convert_to_tomoyo(result)
         print(domain_lines)
         print("\n--- TOMOYO Exception Policy ---")
         print(exception_lines)
@@ -57,6 +68,7 @@ def main():
         print(e)
     finally:
         print("■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■")
+
 
 if __name__ == "__main__":
     main()
