@@ -499,6 +499,23 @@ def translate_apparmor_pattern(pattern: str) -> list:
     return results
 
 
+def tomoyo_rewrite_mounts(path: str) -> str:
+    """
+    Rewrites paths that START with pseudo-filesystem mount points
+    into TOMOYO-compatible paths using regex.
+    """
+    mount_patterns = {
+        r"^/proc/": "proc:/",
+        r"^/sys/": "sys:/",
+        r"^/dev/pts/": "devpts:/",
+    }
+    print(f"Original path: {path}")
+    for pattern, replacement in mount_patterns.items():
+        if re.match(pattern, path):
+            return re.sub(pattern, replacement, path)
+    return path
+
+
 def convert_to_tomoyo(policy: AppArmorPolicy):
     """
     Convert an AppArmor policy to TOMOYO domain and exception policies.
@@ -585,6 +602,7 @@ def convert_to_tomoyo(policy: AppArmorPolicy):
                     expanded = expand_variables(rule.path, policy.variables)
                     for path in expanded:
                         path = apply_aliases(path, policy.aliases)
+                        path = tomoyo_rewrite_mounts(path)
                         variants = (
                             translate_apparmor_pattern(path)
                             if any(c in path for c in "{[?*}")
