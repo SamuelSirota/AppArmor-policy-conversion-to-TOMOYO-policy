@@ -38,7 +38,7 @@ tomoyo-loadpolicy -d < domain_policy
 tomoyo-loadpolicy -e < exception_polcy
 ```
 
-Arguments `-d` and `-e` are used to load domain and exception policy files respectively.
+Arguments `-d` and `-e` are used to append domain and exception policy files respectively.
 
 When everything is set up, you can start the TOMOYO policy manager using:
 
