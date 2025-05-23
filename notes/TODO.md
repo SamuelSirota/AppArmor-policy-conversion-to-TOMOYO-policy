@@ -162,14 +162,38 @@ FIXME musim spravit testovanie, zoberiem existing policy z apparmoru, prekonvert
 - [x] elektronicka priloha k praci, v aise sa nachadza zdrojovy kod k datumu... aktualnu verizu je mozno najst na github...
 
 - [x] ukazkove spustenie, ako prekonvertovat politiku
-- stredu o 15:00 21.5.2025
+- stredu o 15:00 14.5.2025
 - [x] tie change profiles, domain changes vratit naspat (otocit), pripadne zmenit zmazat whatever pozriet
 
 ## PRED 14.5.2025
 
-- [ ] spytat sa na to vyhlasnie o povodnom dielo ze som to pisal ja sam...
+- [x] spytat sa na to vyhlasnie o povodnom dielo ze som to pisal ja sam...
 - dat aj pomenovania na figure hore?
 - [x] do zaveru mozem dat ze sme sa mohli viac pohrat s tymi environmental variables
 - [x] tabulky 3,4,5 (booktabs??)
 - [x] nakonci pred apendixom dat "obsah appendixu ako ma roderik v diplomovke"
-- [ ] spytaj sa na captions
+- [x] spytaj sa na captions tabulky hore, ostatne dole
+
+## PO
+
+- [x] pridat do uvodu co je v jednotlivych sekciach
+- [x] LILLY "however," pridat ciarky pozriet
+- [x] v zaver viac opisat viac tie vysledky, f-skore
+- [x] access transformer, pridaj listing k minted
+- [x] zoznamy listingov a obrazky,
+- [x] glossary
+
+- [x] v slovenskych textoch dakmam jednopismenkove slovo dat tam ~ aby neboli nakonci riadku
+- [x] hook nie hak
+- [x] spustit (execute) moze byt aj ako vykonat
+- linuxos.sk
+- [x] citacie do rezume(ASI NIE) aj do comparison
+- [x] ked mam prvy krat nejake cudzie slovo dam emph a potom uz nemusimm ale mozem
+- [x] python davat velke P
+- [x] algoritmy, aspon return FIXME
+- [x] listing ked je jeden, dva
+- [x] zdrojove kody obrazkov dat do prilohy
+- [x] zmenit link na github
+- [x] pridat popis prilohy (zdrojaky kodu, diagramov)
+
+- [x] CELA IMPLEMENTACIA POUZIVA WE namiesto the code aaaaaaaaaaach

@@ -1,0 +1,3 @@
+tests/fails/ linguist-language=Lark
+tests/passes/ linguist-language=Lark
+tests/man_test/usr.bin.man linguist-language=Lark

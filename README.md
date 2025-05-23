@@ -9,7 +9,44 @@ This repository contains a python script which converts AppArmor policy to TOMOY
 
 ## Quick start
 
-TODO
+To run the script, you need to have Python and Lark library installed. You can install Lark using pip:
+
+```bash
+pip install lark --upgrade
+```
+
+To run the script, you can use the following command:
+
+```bash
+python convert.py <input_file> <domain_policy> <exception_policy>
+```
+
+Where:
+
+- `<input_file>` is the path to the AppArmor policy file you want to convert.
+- `<domain_policy>` is the path where the TOMOYO domain policy file will be saved.
+- `<exception_policy>` is the path where the TOMOYO exception policy file will be saved.
+
+All three files are required. The script will parse the AppArmor policy file and generate TOMOYO policy files in the specified paths.
+
+To use the policy files, you need to load them into TOMOYO.
+If you do not have TOMOYO installed, you can follow the instructions in the [TOMOYO installation guide](notes/tomoyo_install.md). When you have TOMOYO installed, you can load the generated policy files into TOMOYO.
+You can load them using `tomoyo-loadpolicy` command:
+
+```bash
+tomoyo-loadpolicy -d < domain_policy
+tomoyo-loadpolicy -e < exception_polcy
+```
+
+Arguments `-d` and `-e` are used to load domain and exception policy files respectively.
+
+When everything is set up, you can start the TOMOYO policy manager using:
+
+```bash
+tomoyo-editpolicy
+```
+
+This will open the TOMOYO policy manager, where you can manage the policies and monitor the system calls made by applications.
 
 ## Structure
 
